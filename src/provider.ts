@@ -24,7 +24,6 @@ function provider(this: any, options: ProviderOptions) {
     providerMap[name] = p
   })
 
-
   seneca
     .fix('sys:provider')
     .message('get:key', get_key)
