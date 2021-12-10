@@ -1,19 +1,19 @@
 {
-  "name": "@seneca/gateway",
-  "version": "0.2.1",
-  "main": "dist/gateway.js",
+  "name": "@seneca/provider",
+  "version": "0.0.1",
+  "main": "dist/provider.js",
   "type": "commonjs",
-  "types": "dist/gateway.d.ts",
+  "types": "dist/provider.d.ts",
   "description": "Handle incoming messages within other frameworks.",
-  "homepage": "https://github.com/senecajs/seneca-gateway",
+  "homepage": "https://github.com/senecajs/seneca-provider",
   "keywords": [
     "seneca",
-    "gateway"
+    "provider"
   ],
   "author": "Richard Rodger - richardrodger.com",
   "repository": {
     "type": "git",
-    "url": "git://github.com/senecajs/seneca-gateway.git"
+    "url": "git://github.com/senecajs/seneca-provider.git"
   },
   "scripts": {
     "test": "jest --coverage",
