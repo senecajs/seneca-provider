@@ -2,7 +2,12 @@
 
 > _Seneca Provider_ is a plugin for [Seneca](http://senecajs.org)
 
-Handle incoming messages within other frameworks.
+
+A plugin to support access to third party APIs. This is the base
+plugin used by service-specific provider plugins (such as
+[@seneca/github-provider](https://github.com/senecajs/seneca-github-provider))
+to handle key management and other shared tasks.
+
 
 [![npm version](https://img.shields.io/npm/v/@seneca/provider.svg)](https://npmjs.com/package/@seneca/provider)
 [![build](https://github.com/senecajs/seneca-provider/actions/workflows/build.yml/badge.svg)](https://github.com/senecajs/seneca-provider/actions/workflows/build.yml)
@@ -14,3 +19,117 @@ Handle incoming messages within other frameworks.
 | ![Voxgig](https://www.voxgig.com/res/img/vgt01r.png) | This open source module is sponsored and supported by [Voxgig](https://www.voxgig.com). |
 |---|---|
 
+
+## Quick Example
+
+
+```js
+
+// Setup - get the key value (<SECRET>) separately from a vault or
+// environment variable.
+Seneca()
+  .use('provider', {
+    provider: {
+      AnExternalService: {
+        keys: {
+          KeyNameZero: {
+            value: '<SECRET>'
+          },
+          KeyNameOne: {
+            value: '<SECRET>'
+          },
+        }
+      }
+    }
+  })
+
+// Later, get the key. Usually you would do this inside
+// the Plugin preparation phase of a provider plugin:
+
+function MyPlugin(options) {
+  let externalServiceSDK = null
+  
+  this.prepare(async function() {
+    let out = await this.post('sys:provider,get:key,provider:AnExternalService,key:KeyNameZero')
+    if (!out.ok) {
+      this.fail('api-key-missing')
+    }
+
+    let config = {
+      auth: out.value
+    }
+
+    externalServiceSDK = new ExternalServiceSDK(config)
+  })
+
+} 
+
+
+```
+
+## Install
+
+```sh
+$ npm install @seneca/provider
+```
+
+
+
+<!--START:options-->
+
+
+## Options
+
+* `provider` : object <i><small>[object Object]</small></i>
+
+
+Set plugin options when loading with:
+```js
+
+
+seneca.use('provider', { name: value, ... })
+
+
+```
+
+
+<small>Note: <code>foo.bar</code> in the list above means 
+<code>{ foo: { bar: ... } }</code></small> 
+
+
+
+<!--END:options-->
+
+<!--START:action-list-->
+
+
+## Action Patterns
+
+* [sys:provider,get:key](#-sysprovidergetkey-)
+* [sys:provider,list:provider](#-sysproviderlistprovider-)
+
+
+<!--END:action-list-->
+
+<!--START:action-desc-->
+
+
+## Action Descriptions
+
+### &laquo; `sys:provider,get:key` &raquo;
+
+Get the value for a specific provider and key name.
+
+
+
+----------
+### &laquo; `sys:provider,list:provider` &raquo;
+
+List all the providers and their key names.
+
+
+
+----------
+
+
+<!--END:action-desc-->
