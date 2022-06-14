@@ -31,6 +31,52 @@ function provider(options) {
             }))
         };
     }
+    const cmdBuilder = {
+        list: (seneca, cmdspec, entspec, spec) => {
+            let pat = {
+                role: 'entity',
+                cmd: cmdspec.name,
+                zone: 'provider',
+                base: spec.provider.name,
+                name: entspec.name
+            };
+            let canon = 'provider/' + spec.provider.name + '/' + entspec.name;
+            let action = async function (msg, meta) {
+                let entize = (data) => this.entity(canon).data$(data);
+                return cmdspec.action.call(this, entize, msg, meta);
+            };
+            seneca.message(pat, action);
+            Object.defineProperty(action, 'name', { value: 'list_' + entspec.name });
+        }
+    };
+    const { Value } = seneca.valid;
+    const validateSpec = seneca.valid({
+        provider: {
+            name: String
+        },
+        entity: Value({
+            cmd: Value({
+                action: Function
+            }, {})
+        }, {})
+    });
+    function entityBuilder(seneca, spec) {
+        spec = validateSpec(spec);
+        for (let entname in spec.entity) {
+            let entspec = spec.entity[entname];
+            entspec.name = entname;
+            for (let cmdname in entspec.cmd) {
+                let cmdspec = entspec.cmd[cmdname];
+                cmdspec.name = cmdname;
+                cmdBuilder[cmdname](seneca, cmdspec, entspec, spec);
+            }
+        }
+    }
+    return {
+        exports: {
+            entityBuilder
+        }
+    };
 }
 // Default options.
 const defaults = {
