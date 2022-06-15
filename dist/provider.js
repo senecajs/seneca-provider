@@ -3,9 +3,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 function provider(options) {
     const seneca = this;
+    const injectVars = seneca.export('env/injectVars');
     const providerMap = {};
     Object.entries(options.provider).forEach(([name, p]) => {
         p.name = name;
+        // Inject environment variables if defined by @seneca/env
+        if (injectVars) {
+            p = injectVars(p);
+        }
         providerMap[name] = p;
     });
     seneca

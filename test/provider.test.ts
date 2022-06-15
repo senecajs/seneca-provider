@@ -19,6 +19,50 @@ describe('provider', () => {
   })
 
 
+  test('env-vars', async () => {
+    process.env.FOO = process.env.FOO || 'foo'
+    const seneca = Seneca({ legacy: false })
+      .test()
+      .use('promisify')
+      .use('env', {
+        // debug: true,
+        file: __dirname + '/env.json',
+        var: {
+          FOO: String,
+          BAR: String,
+        }
+      })
+      .use(Provider, {
+        provider: {
+          zed: {
+            keys: {
+              foo: { value: '$FOO' },
+              bar: { value: '$BAR' },
+            }
+          }
+        }
+      })
+    await seneca.ready()
+
+
+    expect(seneca.find_plugin('provider').options).toEqual({
+      provider: {
+        zed: {
+          keys: {
+            bar: {
+              value: 'bar',
+            },
+            foo: {
+              value: 'foo',
+            },
+          },
+          name: 'zed'
+        }
+      }
+    })
+  })
+
+
   test('messages', async () => {
     const seneca = Seneca({ legacy: false }).test().use('promisify').use(Provider, {
       provider: {
@@ -46,6 +90,7 @@ describe('provider', () => {
     })
     await (SenecaMsgTest(seneca, ProviderMessages)())
   })
+
 
   test('entityBuilder', async () => {
     const seneca = Seneca({ legacy: false }).test()

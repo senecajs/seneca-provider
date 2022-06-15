@@ -1,6 +1,6 @@
 {
   "name": "@seneca/provider",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "main": "dist/provider.js",
   "type": "commonjs",
   "types": "dist/provider.d.ts",
@@ -48,6 +48,7 @@
   },
   "peerDependencies": {
     "seneca": ">=3",
-    "seneca-promisify": ">=2"
+    "seneca-promisify": ">=2",
+    "@seneca/env": ">=0.2"
   }
 }

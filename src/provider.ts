@@ -18,9 +18,17 @@ type ProviderOptions = {
 function provider(this: any, options: ProviderOptions) {
   const seneca = this
 
+  const injectVars = seneca.export('env/injectVars')
+
   const providerMap: Record<string, Provider> = {}
   Object.entries(options.provider).forEach(([name, p]: [string, Provider]) => {
     p.name = name
+
+    // Inject environment variables if defined by @seneca/env
+    if (injectVars) {
+      p = injectVars(p)
+    }
+
     providerMap[name] = p
   })
 
