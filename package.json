@@ -35,16 +35,16 @@
     "LICENSE"
   ],
   "devDependencies": {
-    "@types/jest": "^28.1.1",
-    "esbuild": "^0.14.43",
+    "@types/jest": "^28.1.3",
+    "esbuild": "^0.14.47",
     "esbuild-jest": "^0.5.0",
     "jest": "^28.1.1",
     "seneca": ">=3",
     "seneca-doc": "^2.1.3",
-    "seneca-entity": "^16.4.0",
+    "seneca-entity": "^17.1.0",
     "seneca-msg-test": "^3.4.0",
     "seneca-promisify": ">=2",
-    "typescript": "^4.7.3"
+    "typescript": "^4.7.4"
   },
   "peerDependencies": {
     "seneca": ">=3",

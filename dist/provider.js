@@ -1,5 +1,5 @@
 "use strict";
-/* Copyright © 2021 Richard Rodger, MIT License. */
+/* Copyright © 2022 Richard Rodger, MIT License. */
 Object.defineProperty(exports, "__esModule", { value: true });
 function provider(options) {
     const seneca = this;
@@ -38,22 +38,36 @@ function provider(options) {
     }
     const cmdBuilder = {
         list: (seneca, cmdspec, entspec, spec) => {
-            let pat = {
-                role: 'entity',
-                cmd: cmdspec.name,
-                zone: 'provider',
-                base: spec.provider.name,
-                name: entspec.name
-            };
-            let canon = 'provider/' + spec.provider.name + '/' + entspec.name;
-            let action = async function (msg, meta) {
-                let entize = (data) => this.entity(canon).data$(data);
-                return cmdspec.action.call(this, entize, msg, meta);
-            };
-            seneca.message(pat, action);
-            Object.defineProperty(action, 'name', { value: 'list_' + entspec.name });
-        }
+            seneca.message(makePattern(cmdspec, entspec, spec), makeAction(cmdspec, entspec, spec));
+        },
+        load: (seneca, cmdspec, entspec, spec) => {
+            seneca.message(makePattern(cmdspec, entspec, spec), makeAction(cmdspec, entspec, spec));
+        },
+        save: (seneca, cmdspec, entspec, spec) => {
+            seneca.message(makePattern(cmdspec, entspec, spec), makeAction(cmdspec, entspec, spec));
+        },
+        remove: (seneca, cmdspec, entspec, spec) => {
+            seneca.message(makePattern(cmdspec, entspec, spec), makeAction(cmdspec, entspec, spec));
+        },
     };
+    function makePattern(cmdspec, entspec, spec) {
+        return {
+            role: 'entity',
+            cmd: cmdspec.name,
+            zone: 'provider',
+            base: spec.provider.name,
+            name: entspec.name
+        };
+    }
+    function makeAction(cmdspec, entspec, spec) {
+        let canon = 'provider/' + spec.provider.name + '/' + entspec.name;
+        let action = async function (msg, meta) {
+            let entize = (data) => this.entity(canon).data$(data);
+            return cmdspec.action.call(this, entize, msg, meta);
+        };
+        Object.defineProperty(action, 'name', { value: 'load_' + entspec.name });
+        return action;
+    }
     const { Value } = seneca.valid;
     const validateSpec = seneca.valid({
         provider: {

@@ -128,7 +128,7 @@ describe('provider', () => {
       zone: 'provider',
     })
 
-    expect(await seneca.entity('provider/foo/bar').list$()).toEqual([
+    expect(await seneca.entity('provider/foo/bar').list$()).toMatchObject([
       {
         "entity$": "provider/foo/bar",
         "x": 1,
