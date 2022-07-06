@@ -140,5 +140,38 @@ describe('provider', () => {
     ])
   })
 
+
+  test('intern.applyModifySpec', async () => {
+    const applyModifySpec = Provider.intern.applyModifySpec
+    expect(applyModifySpec({ x: 1 }, { field: { y: { src: 'x' } } }))
+      .toEqual({ x: 1, y: 1 })
+  })
+
+
+  test('intern.makeEntize', async () => {
+    const seneca = Seneca({ legacy: false }).test()
+      .use('promisify')
+      .use('entity')
+      .use(Provider)
+    await seneca.ready()
+
+
+    const makeEntize = Provider.intern.makeEntize
+    const entize = makeEntize(seneca, 'foo')
+
+    let foo0 = entize({ x: 1 }, { field: { y: { src: 'x' } } })
+    expect(foo0.data$()).toEqual({
+      entity$: {
+        base: undefined,
+        name: 'foo',
+        zone: undefined,
+      }, x: 1, y: 1
+    })
+
+    let foo1 = entize(seneca.entity('foo').make$({ x: 1 }),
+      { field: { y: { src: 'x' } } })
+    expect(foo1).toEqual({ x: 1, y: 1 })
+  })
+
 })
 

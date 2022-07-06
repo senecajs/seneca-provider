@@ -15,6 +15,12 @@ type KeyDesc = {
   value: string
 }
 
+type ModifySpec = {
+  field?: Record<string, {
+    src: string
+  }>
+}
+
 type ProviderOptions = {
   provider: Record<string, Provider>
 }
@@ -40,6 +46,7 @@ function provider(this: any, options: ProviderOptions) {
   seneca
     .fix('sys:provider')
     .message('get:key', get_key)
+    .message('get:keymap', get_keymap)
     .message('list:provider', list_provider)
 
 
@@ -55,6 +62,18 @@ function provider(this: any, options: ProviderOptions) {
     }
 
     return { ok: true, value: kd.value }
+  }
+
+
+  async function get_keymap(msg: any) {
+    let p = providerMap[msg.provider]
+    if (null == p) {
+      return { ok: false, why: 'unknown-provider' }
+    }
+
+    const keymap = seneca.util.deep(p.keys)
+
+    return { ok: true, keymap: keymap }
   }
 
 
@@ -89,29 +108,6 @@ function provider(this: any, options: ProviderOptions) {
         makeAction(cmdspec, entspec, spec))
     },
   }
-
-
-  function makePattern(cmdspec: any, entspec: any, spec: any) {
-    return {
-      role: 'entity',
-      cmd: cmdspec.name,
-      zone: 'provider',
-      base: spec.provider.name,
-      name: entspec.name
-    }
-  }
-
-
-  function makeAction(cmdspec: any, entspec: any, spec: any) {
-    let canon = 'provider/' + spec.provider.name + '/' + entspec.name
-    let action = async function(this: any, msg: any, meta: any) {
-      let entize = (data: any) => this.entity(canon).data$(data)
-      return cmdspec.action.call(this, entize, msg, meta)
-    }
-    Object.defineProperty(action, 'name', { value: 'load_' + entspec.name })
-    return action
-  }
-
 
 
   const { Value } = seneca.valid
@@ -150,6 +146,85 @@ function provider(this: any, options: ProviderOptions) {
   }
 
 }
+
+
+// For external testing
+provider.intern = {
+  makePattern,
+  makeAction,
+  makeEntize,
+  applyModifySpec,
+}
+
+
+function makePattern(cmdspec: any, entspec: any, spec: any) {
+  return {
+    role: 'entity',
+    cmd: cmdspec.name,
+    zone: 'provider',
+    base: spec.provider.name,
+    name: entspec.name
+  }
+}
+
+
+
+function makeAction(cmdspec: any, entspec: any, spec: any) {
+  let canon = 'provider/' + spec.provider.name + '/' + entspec.name
+  let action = async function(this: any, msg: any, meta: any) {
+    // let entize = (data: any) => this.entity(canon).data$(data)
+    let entize = makeEntize(this, canon)
+    return cmdspec.action.call(this, entize, msg, meta)
+  }
+  Object.defineProperty(action, 'name', { value: 'load_' + entspec.name })
+  return action
+}
+
+
+function makeEntize(seneca: any, canon: any) {
+
+  // data -> Entity
+  // Entity -> data
+  return function entize(data: any, spec?: ModifySpec) {
+    let isEnt =
+      data &&
+      'string' === typeof data.entity$ &&
+      'function' === typeof data.data$
+
+    let out
+
+    if (isEnt) {
+      let raw = data.data$(false)
+      out = applyModifySpec(raw, spec)
+
+    }
+    else {
+      data = applyModifySpec(data, spec)
+      out = seneca.entity(canon).data$(data)
+    }
+
+    return out
+  }
+}
+
+
+function applyModifySpec(data: any, spec?: ModifySpec) {
+  if (spec) {
+    if (spec.field) {
+      for (let field in spec.field) {
+        let fieldSpec = spec.field[field]
+
+        // TODO: add more operations
+        // 'copy;' is the default operation
+        if (null != fieldSpec.src) {
+          data[field] = data[fieldSpec.src]
+        }
+      }
+    }
+  }
+  return data
+}
+
 
 
 // Default options.
