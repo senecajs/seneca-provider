@@ -106,6 +106,7 @@ seneca.use('provider', { name: value, ... })
 ## Action Patterns
 
 * [get:key,sys:provider](#-getkeysysprovider-)
+* [get:keymap,sys:provider](#-getkeymapsysprovider-)
 * [list:provider,sys:provider](#-listprovidersysprovider-)
 
 
@@ -119,6 +120,13 @@ seneca.use('provider', { name: value, ... })
 ### &laquo; `get:key,sys:provider` &raquo;
 
 Get the value for a specific provider and key name.
+
+
+
+----------
+### &laquo; `get:keymap,sys:provider` &raquo;
+
+No description provided.
 
 
 
