@@ -28,41 +28,7 @@ to handle key management and other shared tasks.
 // Setup - get the key value (<SECRET>) separately from a vault or
 // environment variable.
 Seneca()
-  .use('provider', {
-    provider: {
-      AnExternalService: {
-        keys: {
-          KeyNameZero: {
-            value: '<SECRET>'
-          },
-          KeyNameOne: {
-            value: '<SECRET>'
-          },
-        }
-      }
-    }
-  })
-
-// Later, get the key. Usually you would do this inside
-// the Plugin preparation phase of a provider plugin:
-
-function MyPlugin(options) {
-  let externalServiceSDK = null
-  
-  this.prepare(async function() {
-    let out = await this.post('sys:provider,get:key,provider:AnExternalService,key:KeyNameZero')
-    if (!out.ok) {
-      this.fail('api-key-missing')
-    }
-
-    let config = {
-      auth: out.value
-    }
-
-    externalServiceSDK = new ExternalServiceSDK(config)
-  })
-
-} 
+  .use('provider')
 
 
 ```
@@ -73,6 +39,26 @@ function MyPlugin(options) {
 $ npm install @seneca/provider
 ```
 
+
+
+## Provider Plugins
+
+* [@seneca/hubspot-provider](github.com/senecajs/seneca-hubspot-provider) - Seneca plugin that provides access to the HubSpot API.
+* [@seneca/eventbrite-provider](github.com/senecajs/seneca-eventbrite-provider) - Seneca provider for the eventbrite.com API.
+* [@seneca/gcal-provider](github.com/senecajs/seneca-gcal-provider) - Seneca plugin that provides access to the Google Calendar API.
+* [@seneca/github-provider](github.com/senecajs/seneca-github-provider) - Seneca plugin that provides access to the GitHub API.
+* [@seneca/gitlab-provider](github.com/senecajs/seneca-gitlab-provider) - Seneca plugin that provides access to the GitLab API.
+* [@seneca/nordigen-provider](github.com/senecajs/seneca-nordigen-provider) - Seneca provider for the nordigen API
+* [@seneca/notion-provider](github.com/senecajs/seneca-notion-provider) - Seneca plugin that provides access to the Notion.so API.
+* [@seneca/salesforce-provider](github.com/senecajs/seneca-salesforce-provider) - Seneca plugin that provides access to the SalesForce API.
+* [@seneca/stytch-provider](github.com/senecajs/seneca-stytch-provider) - Seneca plugin that provides access to the Stytch API.
+* [@seneca/trello-provider](github.com/senecajs/seneca-trello-provider template) - Seneca plugin that provides access to the Trello API.
+
+
+# Write Your Own Provider
+
+
+* [seneca-example-provider](github.com/senecajs/seneca-eventbrite-provider) - Example Provider Plugin starting point
 
 
 <!--START:options-->
