@@ -25,7 +25,7 @@ type ProviderOptions = {
   provider: Record<string, Provider>
 }
 
-type UtilitiesProviderOptions = {
+type ProviderUtilityOptions = {
   url: string
   fetch?: any
   debug: boolean
@@ -144,102 +144,116 @@ function provider(this: any, options: ProviderOptions) {
     }
   }
 
-  function makeUrl(suffix: string, q: any, options: UtilitiesProviderOptions) {
-    let url = options.url + suffix;
-    if (q) {
-      if ("string" === typeof q) {
-        url += "/" + encodeURIComponent(q);
-      } else if ("object" === typeof q && 0 < Object.keys(q).length) {
-        url +=
-        "?" +
-        Object.entries(q)
-        .reduce((u: any, kv: any) => (u.append(kv[0], kv[1]), u), new URLSearchParams())
-        .toString();
-      }
-    }
-  
-    return url;
-  };
-  
-  function makeConfig (seneca: any, config?: any) {
-    seneca.util.deep(
-      {
-        headers: {
-          ...seneca.shared.headers,
-        },
-      },
-      config
-    );
-  }
-  
-  async function getJSON (url: string, options: UtilitiesProviderOptions, config?: any) {
-    const res = await options.fetch(url, config);
-  
-    if (200 == res.status) {
-      let json: any = await res.json();
-      return json;
-    } else {
-      let err: any = new Error("ChecklyhqProvider " + res.status);
-      err.checklyResponse = res;
-      throw err;
-    }
-  };
-  
-  async function postJSON (url: string, options: UtilitiesProviderOptions, config: any) {
-    config.method = config.method || "post";
-  
-    config.body = "string" === typeof config.body ? config.body : JSON.stringify(config.body);
-  
-    config.headers["Content-Type"] = config.headers["Content-Type"] || "application/json";
-  
-    const res = await options.fetch(url, config);
-  
-    if (200 <= res.status && res.status < 300) {
-      let json: any = await res.json();
-      return json;
-    } else {
-      let err: any = new Error("Provider" + res.status);
-      try {
-        err.body = await res.json();
-      } catch (e: any) {
-        err.body = await res.text();
-      }
-      err.status = res.status;
-      throw err;
-    }
-  };
-  
-  
-  async function deleteJSON (url: string, options: UtilitiesProviderOptions, config: any) {
-    config.method = config.method || "delete";
-  
-    config.headers["Content-Type"] = config.headers["Content-Type"] || "application/json";
-  
-    const res = await options.fetch(url, config);
-  
-    if (200 <= res.status && res.status < 300) {
-      let json: any = await res.json();
-      return json;
-    } else {
-      let err: any = new Error("Provider" + res.status);
-      try {
-        err.body = await res.json();
-      } catch (e: any) {
-        err.body = await res.text();
-      }
-      err.status = res.status;
-      throw err;
-    }
-  };
 
-  return {
-    exports: {
-      entityBuilder,
+
+  function makeUtils(utilopts: ProviderUtilityOptions, config?: any) {
+    function makeUrl(suffix: string, q: any) {
+      let url = utilopts.url + suffix
+      if (q) {
+        if ("string" === typeof q) {
+          url += "/" + encodeURIComponent(q)
+        } else if ("object" === typeof q && 0 < Object.keys(q).length) {
+          url +=
+            "?" +
+            Object.entries(q)
+              .reduce((u: any, kv: any) => (u.append(kv[0], kv[1]), u), new URLSearchParams())
+              .toString()
+        }
+      }
+
+      return url
+    }
+
+    function makeConfig(seneca: any) {
+      seneca.util.deep(
+        {
+          headers: {
+            ...seneca.shared.headers,
+          },
+        },
+        config
+      )
+    }
+
+    async function getJSON(url: string) {
+      const res = await utilopts.fetch(url, config)
+
+      if (200 == res.status) {
+        const json: any = await res.json()
+        return json
+      } else {
+        const err: any = new Error("Provider " + res.status)
+        const fullError = { ...err, provider: res }
+        throw fullError
+      }
+    }
+
+    async function postJSON(url: string) {
+      const postConfig = {
+        method: config.method || "post",
+        body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
+        headers: {
+          "Content-Type": config.headers["Content-Type"] || "application/json",
+          ...config.headers,
+        },
+      }
+
+      const res = await utilopts.fetch(url, postConfig)
+
+      if (200 <= res.status && res.status < 300) {
+        const json: any = await res.json()
+        return json
+      } else {
+        const err: any = new Error("Provider" + res.status)
+        try {
+          err.body = await res.json()
+        } catch (e: any) {
+          err.body = await res.text()
+        }
+        const fullError = { ...err, status: res.status }
+        throw fullError
+      }
+    }
+
+    async function deleteJSON(url: string) {
+      const deleteConfig = {
+        method: config.method || "delete",
+        headers: {
+          "Content-Type": config.headers["Content-Type"] || "application/json",
+          ...config.headers,
+        },
+      }
+
+      const res = await utilopts.fetch(url, deleteConfig)
+
+      if (200 <= res.status && res.status < 300) {
+        const json: any = await res.json()
+        return json
+      } else {
+        const err: any = new Error("Provider" + res.status)
+        try {
+          err.body = await res.json()
+        } catch (e: any) {
+          err.body = await res.text()
+        }
+        const fullError = { ...err, status: res.status }
+        throw fullError
+      }
+    }
+
+    return {
       makeUrl,
       makeConfig,
       getJSON,
       postJSON,
-      deleteJSON
+      deleteJSON,
+    }
+  }
+
+  return {
+    exports: {
+      entityBuilder,
+      makeUtils
     }
   }
 
@@ -313,7 +327,7 @@ function applyModifySpec(data: any, spec?: ModifySpec) {
         let fieldSpec = spec.field[field]
 
         // TODO: add more operations
-        // 'copy;' is the default operation
+        // 'copy' is the default operation
         if (null != fieldSpec.src) {
           data[field] = data[fieldSpec.src]
         }
