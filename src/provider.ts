@@ -25,6 +25,12 @@ type ProviderOptions = {
   provider: Record<string, Provider>
 }
 
+type UtilitiesProviderOptions = {
+  url: string
+  fetch?: any
+  debug: boolean
+}
+
 
 function provider(this: any, options: ProviderOptions) {
   const seneca = this
@@ -138,10 +144,102 @@ function provider(this: any, options: ProviderOptions) {
     }
   }
 
+  function makeUrl(suffix: string, q: any, options: UtilitiesProviderOptions) {
+    let url = options.url + suffix;
+    if (q) {
+      if ("string" === typeof q) {
+        url += "/" + encodeURIComponent(q);
+      } else if ("object" === typeof q && 0 < Object.keys(q).length) {
+        url +=
+        "?" +
+        Object.entries(q)
+        .reduce((u: any, kv: any) => (u.append(kv[0], kv[1]), u), new URLSearchParams())
+        .toString();
+      }
+    }
+  
+    return url;
+  };
+  
+  function makeConfig (seneca: any, config?: any) {
+    seneca.util.deep(
+      {
+        headers: {
+          ...seneca.shared.headers,
+        },
+      },
+      config
+    );
+  }
+  
+  async function getJSON (url: string, options: UtilitiesProviderOptions, config?: any) {
+    const res = await options.fetch(url, config);
+  
+    if (200 == res.status) {
+      let json: any = await res.json();
+      return json;
+    } else {
+      let err: any = new Error("ChecklyhqProvider " + res.status);
+      err.checklyResponse = res;
+      throw err;
+    }
+  };
+  
+  async function postJSON (url: string, options: UtilitiesProviderOptions, config: any) {
+    config.method = config.method || "post";
+  
+    config.body = "string" === typeof config.body ? config.body : JSON.stringify(config.body);
+  
+    config.headers["Content-Type"] = config.headers["Content-Type"] || "application/json";
+  
+    const res = await options.fetch(url, config);
+  
+    if (200 <= res.status && res.status < 300) {
+      let json: any = await res.json();
+      return json;
+    } else {
+      let err: any = new Error("Provider" + res.status);
+      try {
+        err.body = await res.json();
+      } catch (e: any) {
+        err.body = await res.text();
+      }
+      err.status = res.status;
+      throw err;
+    }
+  };
+  
+  
+  async function deleteJSON (url: string, options: UtilitiesProviderOptions, config: any) {
+    config.method = config.method || "delete";
+  
+    config.headers["Content-Type"] = config.headers["Content-Type"] || "application/json";
+  
+    const res = await options.fetch(url, config);
+  
+    if (200 <= res.status && res.status < 300) {
+      let json: any = await res.json();
+      return json;
+    } else {
+      let err: any = new Error("Provider" + res.status);
+      try {
+        err.body = await res.json();
+      } catch (e: any) {
+        err.body = await res.text();
+      }
+      err.status = res.status;
+      throw err;
+    }
+  };
 
   return {
     exports: {
-      entityBuilder
+      entityBuilder,
+      makeUrl,
+      makeConfig,
+      getJSON,
+      postJSON,
+      deleteJSON
     }
   }
 
