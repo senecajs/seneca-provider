@@ -52,5 +52,8 @@
     "seneca": ">=3",
     "seneca-promisify": ">=3",
     "@seneca/env": ">=0.2"
+  },
+  "engines": {
+    "node": ">=14"
   }
 }
