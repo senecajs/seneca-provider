@@ -82,9 +82,105 @@ function provider(options) {
             }
         }
     }
+    function makeUtils(utilopts, config) {
+        function makeUrl(suffix, q) {
+            let url = utilopts.url + suffix;
+            if (q) {
+                if ("string" === typeof q) {
+                    url += "/" + encodeURIComponent(q);
+                }
+                else if ("object" === typeof q && 0 < Object.keys(q).length) {
+                    url +=
+                        "?" +
+                            Object.entries(q)
+                                .reduce((u, kv) => (u.append(kv[0], kv[1]), u), new URLSearchParams())
+                                .toString();
+                }
+            }
+            return url;
+        }
+        function makeConfig(seneca) {
+            seneca.util.deep({
+                headers: {
+                    ...seneca.shared.headers,
+                },
+            }, config);
+        }
+        async function getJSON(url) {
+            const res = await utilopts.fetch(url, config);
+            if (200 == res.status) {
+                const json = await res.json();
+                return json;
+            }
+            else {
+                const err = new Error("Provider " + res.status);
+                const fullError = { ...err, provider: res };
+                throw fullError;
+            }
+        }
+        async function postJSON(url) {
+            const postConfig = {
+                method: config.method || "post",
+                body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
+                headers: {
+                    "Content-Type": config.headers["Content-Type"] || "application/json",
+                    ...config.headers,
+                },
+            };
+            const res = await utilopts.fetch(url, postConfig);
+            if (200 <= res.status && res.status < 300) {
+                const json = await res.json();
+                return json;
+            }
+            else {
+                const err = new Error("Provider" + res.status);
+                try {
+                    err.body = await res.json();
+                }
+                catch (e) {
+                    err.body = await res.text();
+                }
+                const fullError = { ...err, status: res.status };
+                throw fullError;
+            }
+        }
+        async function deleteJSON(url) {
+            const deleteConfig = {
+                method: config.method || "delete",
+                headers: {
+                    "Content-Type": config.headers["Content-Type"] || "application/json",
+                    ...config.headers,
+                },
+            };
+            const res = await utilopts.fetch(url, deleteConfig);
+            if (200 <= res.status && res.status < 300) {
+                const json = await res.json();
+                return json;
+            }
+            else {
+                const err = new Error("Provider" + res.status);
+                try {
+                    err.body = await res.json();
+                }
+                catch (e) {
+                    err.body = await res.text();
+                }
+                const fullError = { ...err, status: res.status };
+                throw fullError;
+            }
+        }
+        return {
+            makeUrl,
+            makeConfig,
+            getJSON,
+            postJSON,
+            deleteJSON,
+        };
+    }
     return {
         exports: {
-            entityBuilder
+            entityBuilder,
+            makeUtils
         }
     };
 }
@@ -139,7 +235,7 @@ function applyModifySpec(data, spec) {
             for (let field in spec.field) {
                 let fieldSpec = spec.field[field];
                 // TODO: add more operations
-                // 'copy;' is the default operation
+                // 'copy' is the default operation
                 if (null != fieldSpec.src) {
                     data[field] = data[fieldSpec.src];
                 }

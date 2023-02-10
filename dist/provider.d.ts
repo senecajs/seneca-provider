@@ -1,21 +1,33 @@
-declare type Provider = {
+type Provider = {
     name: string;
     keys: Record<string, KeyDesc>;
 };
-declare type KeyDesc = {
+type KeyDesc = {
     value: string;
 };
-declare type ModifySpec = {
+type ModifySpec = {
     field?: Record<string, {
         src: string;
     }>;
 };
-declare type ProviderOptions = {
+type ProviderOptions = {
     provider: Record<string, Provider>;
+};
+type ProviderUtilityOptions = {
+    url: string;
+    fetch?: any;
+    debug: boolean;
 };
 declare function provider(this: any, options: ProviderOptions): {
     exports: {
         entityBuilder: (seneca: any, spec: any) => void;
+        makeUtils: (utilopts: ProviderUtilityOptions, config?: any) => {
+            makeUrl: (suffix: string, q: any) => string;
+            makeConfig: (seneca: any) => void;
+            getJSON: (url: string) => Promise<any>;
+            postJSON: (url: string) => Promise<any>;
+            deleteJSON: (url: string) => Promise<any>;
+        };
     };
 };
 declare namespace provider {
