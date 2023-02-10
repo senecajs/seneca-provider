@@ -14,6 +14,7 @@ type ProviderOptions = {
     provider: Record<string, Provider>;
 };
 type ProviderUtilityOptions = {
+    name: string;
     url: string;
     fetch?: any;
     debug: boolean;
@@ -21,12 +22,12 @@ type ProviderUtilityOptions = {
 declare function provider(this: any, options: ProviderOptions): {
     exports: {
         entityBuilder: (seneca: any, spec: any) => void;
-        makeUtils: (utilopts: ProviderUtilityOptions, config?: any) => {
+        makeUtils: (utilopts: ProviderUtilityOptions) => {
+            entityBuilder: (seneca: any, spec: any) => void;
             makeUrl: (suffix: string, q: any) => string;
-            makeConfig: (seneca: any) => void;
-            getJSON: (url: string) => Promise<any>;
-            postJSON: (url: string) => Promise<any>;
-            deleteJSON: (url: string) => Promise<any>;
+            getJSON: (url: string, config?: any) => Promise<any>;
+            postJSON: (url: string, config?: any) => Promise<any>;
+            deleteJSON: (url: string, config?: any) => Promise<any>;
         };
     };
 };

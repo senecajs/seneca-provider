@@ -92,6 +92,62 @@ describe('provider', () => {
   })
 
 
+  test('child-provider', async () => {
+    const s0 = Seneca({ legacy: false })
+      .test()
+      .quiet()
+      .use('promisify')
+      .use('entity')
+      .use(Provider, {})
+      .use(function RepohomeProvider() {
+        const seneca = this
+        const entityBuilder = seneca.export('provider/entityBuilder')
+        const { makeUrl, getJSON } =
+          seneca.export('provider/makeUtils')({
+            name: 'repohome',
+            url: 'https://api.github.com/repos/senecajs/'
+          })
+
+        entityBuilder(seneca, {
+          provider: {
+            name: 'repohome'
+          },
+          entity: {
+            readme: {
+              cmd: {
+                load: {
+                  action: async function(this: any, entize: any, msg: any) {
+                    const res: any =
+                      await getJSON(makeUrl(msg.q.id))
+
+                    let load = res ? entize(res) : null
+
+                    load.id = msg.q.id
+
+                    return load
+                  }
+                }
+              }
+            }
+          }
+        })
+      })
+
+    let rm0 = await s0.entity('provider/repohome/readme').load$('seneca-provider')
+    expect(rm0.id).toEqual('seneca-provider')
+    expect(rm0.full_name).toEqual('senecajs/seneca-provider')
+
+    try {
+      await s0.entity('provider/repohome/readme').load$('not-a-seneca-plugin')
+      fail()
+    }
+    catch (e) {
+      expect(e.message).toContain('Provider repohome')
+    }
+  })
+
+
+
   test('entityBuilder', async () => {
     const seneca = Seneca({ legacy: false }).test()
       .use('promisify')

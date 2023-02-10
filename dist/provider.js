@@ -82,7 +82,12 @@ function provider(options) {
             }
         }
     }
-    function makeUtils(utilopts, config) {
+    function makeUtils(utilopts) {
+        // TODO: provider name for better errors
+        utilopts.name = utilopts.name || '';
+        const fetcher = ('undefined' === typeof globalThis.fetch) ?
+            (utilopts.fetch || require('node-fetch')) :
+            globalThis.fetch;
         function makeUrl(suffix, q) {
             let url = utilopts.url + suffix;
             if (q) {
@@ -99,26 +104,23 @@ function provider(options) {
             }
             return url;
         }
-        function makeConfig(seneca) {
-            seneca.util.deep({
-                headers: {
-                    ...seneca.shared.headers,
-                },
-            }, config);
-        }
-        async function getJSON(url) {
-            const res = await utilopts.fetch(url, config);
+        async function getJSON(url, config) {
+            const res = await fetcher(url, config);
             if (200 == res.status) {
                 const json = await res.json();
                 return json;
             }
             else {
-                const err = new Error("Provider " + res.status);
-                const fullError = { ...err, provider: res };
-                throw fullError;
+                const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
+                err.provider = {
+                    response: res,
+                    options,
+                    config,
+                };
+                throw err;
             }
         }
-        async function postJSON(url) {
+        async function postJSON(url, config) {
             const postConfig = {
                 method: config.method || "post",
                 body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
@@ -127,24 +129,28 @@ function provider(options) {
                     ...config.headers,
                 },
             };
-            const res = await utilopts.fetch(url, postConfig);
+            const res = await fetcher(url, postConfig);
             if (200 <= res.status && res.status < 300) {
                 const json = await res.json();
                 return json;
             }
             else {
-                const err = new Error("Provider" + res.status);
+                const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
+                err.provider = {
+                    response: res,
+                    options,
+                    config,
+                };
                 try {
-                    err.body = await res.json();
+                    err.provider.body = await res.json();
                 }
                 catch (e) {
-                    err.body = await res.text();
+                    err.provider.body = await res.text();
                 }
-                const fullError = { ...err, status: res.status };
-                throw fullError;
+                throw err;
             }
         }
-        async function deleteJSON(url) {
+        async function deleteJSON(url, config) {
             const deleteConfig = {
                 method: config.method || "delete",
                 headers: {
@@ -152,26 +158,30 @@ function provider(options) {
                     ...config.headers,
                 },
             };
-            const res = await utilopts.fetch(url, deleteConfig);
+            const res = await fetcher(url, deleteConfig);
             if (200 <= res.status && res.status < 300) {
                 const json = await res.json();
                 return json;
             }
             else {
-                const err = new Error("Provider" + res.status);
+                const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
+                err.provider = {
+                    response: res,
+                    options,
+                    config,
+                };
                 try {
-                    err.body = await res.json();
+                    err.provider.body = await res.json();
                 }
                 catch (e) {
-                    err.body = await res.text();
+                    err.provider.body = await res.text();
                 }
-                const fullError = { ...err, status: res.status };
-                throw fullError;
+                throw err;
             }
         }
         return {
+            entityBuilder,
             makeUrl,
-            makeConfig,
             getJSON,
             postJSON,
             deleteJSON,
@@ -205,7 +215,8 @@ function makeAction(cmdspec, entspec, spec) {
     let action = async function (msg, meta) {
         // let entize = (data: any) => this.entity(canon).data$(data)
         let entize = makeEntize(this, canon);
-        return cmdspec.action.call(this, entize, msg, meta);
+        let out = await cmdspec.action.call(this, entize, msg, meta);
+        return out;
     };
     Object.defineProperty(action, 'name', { value: 'load_' + entspec.name });
     return action;

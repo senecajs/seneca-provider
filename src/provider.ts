@@ -26,6 +26,7 @@ type ProviderOptions = {
 }
 
 type ProviderUtilityOptions = {
+  name: string
   url: string
   fetch?: any
   debug: boolean
@@ -146,7 +147,17 @@ function provider(this: any, options: ProviderOptions) {
 
 
 
-  function makeUtils(utilopts: ProviderUtilityOptions, config?: any) {
+  function makeUtils(utilopts: ProviderUtilityOptions) {
+    // TODO: provider name for better errors
+
+    utilopts.name = utilopts.name || ''
+
+    const fetcher: any =
+      ('undefined' === typeof globalThis.fetch) ?
+        (utilopts.fetch || require('node-fetch')) :
+        globalThis.fetch
+
+
     function makeUrl(suffix: string, q: any) {
       let url = utilopts.url + suffix
       if (q) {
@@ -164,31 +175,26 @@ function provider(this: any, options: ProviderOptions) {
       return url
     }
 
-    function makeConfig(seneca: any) {
-      seneca.util.deep(
-        {
-          headers: {
-            ...seneca.shared.headers,
-          },
-        },
-        config
-      )
-    }
 
-    async function getJSON(url: string) {
-      const res = await utilopts.fetch(url, config)
+    async function getJSON(url: string, config?: any) {
+      const res = await fetcher(url, config)
 
       if (200 == res.status) {
         const json: any = await res.json()
         return json
       } else {
-        const err: any = new Error("Provider " + res.status)
-        const fullError = { ...err, provider: res }
-        throw fullError
+        const err: any = new Error('Provider ' + utilopts.name + ' ' + res.status)
+        err.provider = {
+          response: res,
+          options,
+          config,
+        }
+        throw err
       }
     }
 
-    async function postJSON(url: string) {
+
+    async function postJSON(url: string, config?: any) {
       const postConfig = {
         method: config.method || "post",
         body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
@@ -198,24 +204,30 @@ function provider(this: any, options: ProviderOptions) {
         },
       }
 
-      const res = await utilopts.fetch(url, postConfig)
+      const res = await fetcher(url, postConfig)
 
       if (200 <= res.status && res.status < 300) {
         const json: any = await res.json()
         return json
       } else {
-        const err: any = new Error("Provider" + res.status)
-        try {
-          err.body = await res.json()
-        } catch (e: any) {
-          err.body = await res.text()
+        const err: any = new Error('Provider ' + utilopts.name + ' ' + res.status)
+        err.provider = {
+          response: res,
+          options,
+          config,
         }
-        const fullError = { ...err, status: res.status }
-        throw fullError
+
+        try {
+          err.provider.body = await res.json()
+        } catch (e: any) {
+          err.provider.body = await res.text()
+        }
+
+        throw err
       }
     }
 
-    async function deleteJSON(url: string) {
+    async function deleteJSON(url: string, config?: any) {
       const deleteConfig = {
         method: config.method || "delete",
         headers: {
@@ -224,26 +236,32 @@ function provider(this: any, options: ProviderOptions) {
         },
       }
 
-      const res = await utilopts.fetch(url, deleteConfig)
+      const res = await fetcher(url, deleteConfig)
 
       if (200 <= res.status && res.status < 300) {
         const json: any = await res.json()
         return json
       } else {
-        const err: any = new Error("Provider" + res.status)
-        try {
-          err.body = await res.json()
-        } catch (e: any) {
-          err.body = await res.text()
+        const err: any = new Error('Provider ' + utilopts.name + ' ' + res.status)
+        err.provider = {
+          response: res,
+          options,
+          config,
         }
-        const fullError = { ...err, status: res.status }
-        throw fullError
+
+        try {
+          err.provider.body = await res.json()
+        } catch (e: any) {
+          err.provider.body = await res.text()
+        }
+
+        throw err
       }
     }
 
     return {
+      entityBuilder,
       makeUrl,
-      makeConfig,
       getJSON,
       postJSON,
       deleteJSON,
@@ -286,7 +304,8 @@ function makeAction(cmdspec: any, entspec: any, spec: any) {
   let action = async function(this: any, msg: any, meta: any) {
     // let entize = (data: any) => this.entity(canon).data$(data)
     let entize = makeEntize(this, canon)
-    return cmdspec.action.call(this, entize, msg, meta)
+    let out = await cmdspec.action.call(this, entize, msg, meta)
+    return out
   }
   Object.defineProperty(action, 'name', { value: 'load_' + entspec.name })
   return action
