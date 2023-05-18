@@ -218,7 +218,7 @@ function makeAction(cmdspec, entspec, spec) {
         let out = await cmdspec.action.call(this, entize, msg, meta);
         return out;
     };
-    Object.defineProperty(action, 'name', { value: 'load_' + entspec.name });
+    Object.defineProperty(action, 'name', { value: cmdspec.name + '_' + entspec.name });
     return action;
 }
 function makeEntize(seneca, canon) {
