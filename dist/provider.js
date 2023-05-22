@@ -104,6 +104,17 @@ function provider(options) {
             }
             return url;
         }
+        async function makeError(res, config) {
+            const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
+            // Format api error for Seneca log
+            err.message += ' message: ' + JSON.stringify(await res.json());
+            err.provider = {
+                response: res,
+                options,
+                config,
+            };
+            return err;
+        }
         async function getJSON(url, config) {
             const res = await fetcher(url, config);
             if (200 == res.status) {
@@ -111,12 +122,7 @@ function provider(options) {
                 return json;
             }
             else {
-                const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
-                err.provider = {
-                    response: res,
-                    options,
-                    config,
-                };
+                const err = await makeError(res, config);
                 throw err;
             }
         }
@@ -135,12 +141,32 @@ function provider(options) {
                 return json;
             }
             else {
-                const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
-                err.provider = {
-                    response: res,
-                    options,
-                    config,
-                };
+                const err = await makeError(res, config);
+                try {
+                    err.provider.body = await res.json();
+                }
+                catch (e) {
+                    err.provider.body = await res.text();
+                }
+                throw err;
+            }
+        }
+        async function patchJSON(url, config) {
+            const postConfig = {
+                method: config.method || "patch",
+                body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
+                headers: {
+                    "Content-Type": config.headers["Content-Type"] || "application/json",
+                    ...config.headers,
+                },
+            };
+            const res = await fetcher(url, postConfig);
+            if (200 <= res.status && res.status < 300) {
+                const json = await res.json();
+                return json;
+            }
+            else {
+                const err = await makeError(res, config);
                 try {
                     err.provider.body = await res.json();
                 }
@@ -164,12 +190,7 @@ function provider(options) {
                 return json;
             }
             else {
-                const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
-                err.provider = {
-                    response: res,
-                    options,
-                    config,
-                };
+                const err = await makeError(res, config);
                 try {
                     err.provider.body = await res.json();
                 }
@@ -184,6 +205,7 @@ function provider(options) {
             makeUrl,
             getJSON,
             postJSON,
+            patchJSON,
             deleteJSON,
         };
     }

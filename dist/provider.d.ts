@@ -27,6 +27,7 @@ declare function provider(this: any, options: ProviderOptions): {
             makeUrl: (suffix: string, q: any) => string;
             getJSON: (url: string, config?: any) => Promise<any>;
             postJSON: (url: string, config?: any) => Promise<any>;
+            patchJSON: (url: string, config?: any) => Promise<any>;
             deleteJSON: (url: string, config?: any) => Promise<any>;
         };
     };
