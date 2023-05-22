@@ -231,7 +231,7 @@ function provider(this: any, options: ProviderOptions) {
     }
 
     async function patchJSON(url: string, config?: any) {
-      const postConfig = {
+      const patchConfig = {
         method: config.method || "patch",
         body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
         headers: {
@@ -240,7 +240,7 @@ function provider(this: any, options: ProviderOptions) {
         },
       }
 
-      const res = await fetcher(url, postConfig)
+      const res = await fetcher(url, patchConfig)
 
       if (200 <= res.status && res.status < 300) {
         const json: any = await res.json()
