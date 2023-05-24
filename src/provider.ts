@@ -176,6 +176,19 @@ function provider(this: any, options: ProviderOptions) {
     }
 
 
+    async function makeError(res: any, config?: any) {
+      const err: any = new Error('Provider ' + utilopts.name + ' ' + res.status)
+      // Format api error for Seneca log
+      err.message += ' message: ' + JSON.stringify(await res.json())
+      err.provider = {
+        response: res,
+        options,
+        config,
+      }
+      return err
+
+    }
+
     async function getJSON(url: string, config?: any) {
       const res = await fetcher(url, config)
 
@@ -183,12 +196,7 @@ function provider(this: any, options: ProviderOptions) {
         const json: any = await res.json()
         return json
       } else {
-        const err: any = new Error('Provider ' + utilopts.name + ' ' + res.status)
-        err.provider = {
-          response: res,
-          options,
-          config,
-        }
+        const err: any = await makeError(res, config)
         throw err
       }
     }
@@ -210,12 +218,7 @@ function provider(this: any, options: ProviderOptions) {
         const json: any = await res.json()
         return json
       } else {
-        const err: any = new Error('Provider ' + utilopts.name + ' ' + res.status)
-        err.provider = {
-          response: res,
-          options,
-          config,
-        }
+        const err: any = await makeError(res, config)
 
         try {
           err.provider.body = await res.json()
@@ -226,6 +229,35 @@ function provider(this: any, options: ProviderOptions) {
         throw err
       }
     }
+
+    async function patchJSON(url: string, config?: any) {
+      const patchConfig = {
+        method: config.method || "patch",
+        body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
+        headers: {
+          "Content-Type": config.headers["Content-Type"] || "application/json",
+          ...config.headers,
+        },
+      }
+
+      const res = await fetcher(url, patchConfig)
+
+      if (200 <= res.status && res.status < 300) {
+        const json: any = await res.json()
+        return json
+      } else {
+        const err: any = await makeError(res, config)
+
+        try {
+          err.provider.body = await res.json()
+        } catch (e: any) {
+          err.provider.body = await res.text()
+        }
+
+        throw err
+      }
+    }
+
 
     async function deleteJSON(url: string, config?: any) {
       const deleteConfig = {
@@ -242,12 +274,7 @@ function provider(this: any, options: ProviderOptions) {
         const json: any = await res.json()
         return json
       } else {
-        const err: any = new Error('Provider ' + utilopts.name + ' ' + res.status)
-        err.provider = {
-          response: res,
-          options,
-          config,
-        }
+        const err: any = await makeError(res, config)
 
         try {
           err.provider.body = await res.json()
@@ -264,6 +291,7 @@ function provider(this: any, options: ProviderOptions) {
       makeUrl,
       getJSON,
       postJSON,
+      patchJSON,
       deleteJSON,
     }
   }
