@@ -23,7 +23,7 @@ In your README.md,
 
 ```
 <!--START:SECTION:intro-->
-// here is where your intro.md will get injected
+// here is where your intro.md will be injected
 <!--END:SECTION:intro-->
 
 Syntax is:
