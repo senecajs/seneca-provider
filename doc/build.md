@@ -4,7 +4,7 @@
 clone seneca-provider into the same parent folder and use the /doc directiory as your placeholder.
 
 
-This is how you would specify your sections in your plugin-doc.js file:
+This is how you specify your sections in your plugin-doc.js file:
 
 ```js
 const messages = { ... }
