@@ -1,14 +1,26 @@
 
-## How to build
+## How to build with seneca-doc
 
 clone seneca-provider into the same parent folder and use the /doc directiory as your placeholder.
 
 
-This is how you specify your sections in your plugin-doc.js file:
+This is how you organize your sections in your plugin-doc.js file:
 
 ```js
-const messages = { ... }
+// messages namespace
+const messages = {
+  load_product: { // where name is the entity name. For example: product
+    desc: 'Load product data into an entity',
+    examples: {},
+    reply_desc: {}
+  },
+  // or inject custom content from your md
+  save_product: {
+    path: '../seneca-provider/doc/save_product.md'
+  }
+}
 
+// custom sections namespace
 const sections = {
   intro: {
     path: '../seneca-provider/doc/intro.md'
