@@ -41,7 +41,7 @@
     "es-jest": "^2.1.0",
     "jest": "^29.4.2",
     "seneca": ">=3",
-    "@seneca/doc": "4.2.4",
+    "@seneca/doc": "^4.2.4",
     "seneca-entity": ">=19",
     "seneca-msg-test": "^3.4.0",
     "seneca-promisify": ">=3",
