@@ -57,6 +57,15 @@ $ npm install @seneca/provider
 * [@seneca/webflow-provider](https://github.com/senecajs/seneca-webflow-provider) - Seneca plugin that provides access to the Webflow API.
 * [@seneca/checklyhq-provider](https://github.com/senecajs/seneca-checklyhq-provider) - Seneca plugin that provides access to the Checkly API.
 * [@seneca/evervault-provider](https://github.com/senecajs/seneca-evervault-provider) - Seneca plugin that provides access to the Evervault API.
+* [@seneca/customerio-provider](https://github.com/senecajs/seneca-customerio-provider) - Seneca plugin that provides access to the Customerio API.
+* [@seneca/apimatic-provider](https://github.com/senecajs/seneca-apimatic-provider) - Seneca plugin that provides access to the Apimatic API.
+* [@seneca/orbit-provider](https://github.com/senecajs/seneca-orbit-provider) - Seneca plugin that provides access to the Orbit API.
+* [@seneca/zoom-provider](https://github.com/senecajs/seneca-zoom-provider) - Seneca plugin that provides access to the Zoom API.
+* [@seneca/tangocard-provider](https://github.com/senecajs/seneca-tangocard-provider) - Seneca plugin that provides access to the Tangocard API.
+* [@seneca/mixpanel-provider](https://github.com/senecajs/seneca-mixpanel-provider) - Seneca plugin that provides access to the Mixpanel API.
+* [@seneca/branchio-provider](https://github.com/senecajs/seneca-branchio-provider) - Seneca plugin that provides access to the Branchio API.
+* [@seneca/meetup-provider](https://github.com/senecajs/seneca-meetup-provider) - Seneca plugin that provides access to the Meetup API.
+* [@seneca/vercel-provider](https://github.com/senecajs/seneca-vercel-provider) - Seneca plugin that provides access to the Vercel API.
 
 
 # Write Your Own Provider
