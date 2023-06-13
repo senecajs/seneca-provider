@@ -53,7 +53,10 @@ $ npm install @seneca/provider
 * [@seneca/salesforce-provider](https://github.com/senecajs/seneca-salesforce-provider) - Seneca plugin that provides access to the SalesForce API.
 * [@seneca/stytch-provider](https://github.com/senecajs/seneca-stytch-provider) - Seneca plugin that provides access to the Stytch API.
 * [@seneca/trello-provider](https://github.com/senecajs/seneca-trello-provider) - Seneca plugin that provides access to the Trello API.
-* [@seneca/typeform-provider](https://github.com/senecajs/seneca-typeform-provider) - Seneca plugin that provides access to the Trello API.
+* [@seneca/typeform-provider](https://github.com/senecajs/seneca-typeform-provider) - Seneca plugin that provides access to the Typeform API.
+* [@seneca/webflow-provider](https://github.com/senecajs/seneca-webflow-provider) - Seneca plugin that provides access to the Webflow API.
+* [@seneca/checklyhq-provider](https://github.com/senecajs/seneca-checklyhq-provider) - Seneca plugin that provides access to the Checkly API.
+* [@seneca/evervault-provider](https://github.com/senecajs/seneca-evervault-provider) - Seneca plugin that provides access to the Evervault API.
 
 
 # Write Your Own Provider
