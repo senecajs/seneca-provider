@@ -2,8 +2,7 @@
 
 
 
-const docs = {
-
+const messages = {
   get_key: {
     desc: 'Get the value for a specific provider and key name.',
   },
@@ -13,8 +12,10 @@ const docs = {
   }
 }
 
-export default docs
+const sections = {}
+
+export default { messages, sections }
 
 if ('undefined' !== typeof (module)) {
-  module.exports = docs
+  module.exports = { messages, sections }
 }
