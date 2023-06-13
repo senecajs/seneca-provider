@@ -66,22 +66,7 @@ $ npm install @seneca/provider
 
 ## Options
 
-* `provider` : object <i><small>[object Object]</small></i>
-
-
-Set plugin options when loading with:
-```js
-
-
-seneca.use('provider', { name: value, ... })
-
-
-```
-
-
-<small>Note: <code>foo.bar</code> in the list above means 
-<code>{ foo: { bar: ... } }</code></small> 
-
+*None.*
 
 
 <!--END:options-->
@@ -91,9 +76,9 @@ seneca.use('provider', { name: value, ... })
 
 ## Action Patterns
 
-* [get:key,sys:provider](#-getkeysysprovider-)
-* [get:keymap,sys:provider](#-getkeymapsysprovider-)
-* [list:provider,sys:provider](#-listprovidersysprovider-)
+* ["sys":"provider","get":"key"](#-sysprovidergetkey-)
+* ["sys":"provider","get":"keymap"](#-sysprovidergetkeymap-)
+* ["sys":"provider","list":"provider"](#-sysproviderlistprovider-)
 
 
 <!--END:action-list-->
@@ -103,21 +88,21 @@ seneca.use('provider', { name: value, ... })
 
 ## Action Descriptions
 
-### &laquo; `get:key,sys:provider` &raquo;
+### &laquo; `"sys":"provider","get":"key"` &raquo;
 
 Get the value for a specific provider and key name.
 
 
 
 ----------
-### &laquo; `get:keymap,sys:provider` &raquo;
+### &laquo; `"sys":"provider","get":"keymap"` &raquo;
 
 No description provided.
 
 
 
 ----------
-### &laquo; `list:provider,sys:provider` &raquo;
+### &laquo; `"sys":"provider","list":"provider"` &raquo;
 
 List all the providers and their key names.
 

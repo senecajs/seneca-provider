@@ -1,9 +1,12 @@
-declare const docs: {
-    get_key: {
-        desc: string;
+declare const _default: {
+    messages: {
+        get_key: {
+            desc: string;
+        };
+        list_provider: {
+            desc: string;
+        };
     };
-    list_provider: {
-        desc: string;
-    };
+    sections: {};
 };
-export default docs;
+export default _default;
