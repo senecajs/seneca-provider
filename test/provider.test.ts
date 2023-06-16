@@ -3,6 +3,7 @@ import Provider from '../src/provider'
 import ProviderDoc from '../src/provider-doc'
 
 const Seneca = require('seneca')
+const { Maintain } = require('@seneca/maintain')
 const SenecaMsgTest = require('seneca-msg-test')
 const ProviderMessages = require('./provider.messages').default
 
@@ -17,6 +18,7 @@ describe('provider', () => {
     const seneca = Seneca({ legacy: false }).test().use('promisify').use(Provider)
     await seneca.ready()
   })
+
 
 
   test('env-vars', async () => {
@@ -61,6 +63,8 @@ describe('provider', () => {
       }
     })
   })
+
+  test('maintain', Maintain)
 
 
   test('messages', async () => {

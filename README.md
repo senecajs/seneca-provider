@@ -125,3 +125,24 @@ List all the providers and their key names.
 
 
 <!--END:action-desc-->
+
+## More Examples
+
+## Motivation
+
+## Support
+
+Check out our sponsors and supporters, Voxgig, on their website [here](https://www.voxgig.com).
+
+## API
+
+## Contributing
+
+The [SenecaJS org](http://senecajs.org/) encourages participation. If you feel you can help in any way, be
+it with bug reporting, documentation, examples, extra testing, or new features, feel free
+to [create an issue](https://github.com/senecajs/seneca-maintain/issues/new), or better yet - [submit a Pull Request](https://github.com/senecajs/seneca-maintain/pulls). For more
+information on contribution, please see our [Contributing Guide](http://senecajs.org/contribute).
+
+## Background
+
+Check out the SenecaJS roadmap [here](https://senecajs.org/roadmap/)!
