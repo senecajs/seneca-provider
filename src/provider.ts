@@ -1,9 +1,11 @@
-/* Copyright © 2022 Richard Rodger, MIT License. */
+/* Copyright © 2022-2023 Richard Rodger, MIT License. */
 
 
 // TODO: field manip utils:
 // pick subsets, renames, ignore undefs, etc - see trello-provider for use case
 
+
+import FetchRetry from 'fetch-retry'
 
 
 type Provider = {
@@ -23,6 +25,9 @@ type ModifySpec = {
 
 type ProviderOptions = {
   provider: Record<string, Provider>
+  entity: {
+    pin: Record<string, string | number | boolean | null>
+  }
 }
 
 type ProviderUtilityOptions = {
@@ -30,6 +35,10 @@ type ProviderUtilityOptions = {
   url: string
   fetch?: any
   debug: boolean
+  retry: boolean | {
+    modes?: string[] // standard, token-refresh
+    config: any
+  }
 }
 
 
@@ -95,23 +104,23 @@ function provider(this: any, options: ProviderOptions) {
 
 
   const cmdBuilder: any = {
-    list: (seneca: any, cmdspec: any, entspec: any, spec: any) => {
-      seneca.message(makePattern(cmdspec, entspec, spec),
+    list: (seneca: any, cmdspec: any, entspec: any, spec: any, options: any) => {
+      seneca.message(makePattern(cmdspec, entspec, spec, options),
         makeAction(cmdspec, entspec, spec))
     },
 
-    load: (seneca: any, cmdspec: any, entspec: any, spec: any) => {
-      seneca.message(makePattern(cmdspec, entspec, spec),
+    load: (seneca: any, cmdspec: any, entspec: any, spec: any, options: any) => {
+      seneca.message(makePattern(cmdspec, entspec, spec, options),
         makeAction(cmdspec, entspec, spec))
     },
 
-    save: (seneca: any, cmdspec: any, entspec: any, spec: any) => {
-      seneca.message(makePattern(cmdspec, entspec, spec),
+    save: (seneca: any, cmdspec: any, entspec: any, spec: any, options: any) => {
+      seneca.message(makePattern(cmdspec, entspec, spec, options),
         makeAction(cmdspec, entspec, spec))
     },
 
-    remove: (seneca: any, cmdspec: any, entspec: any, spec: any) => {
-      seneca.message(makePattern(cmdspec, entspec, spec),
+    remove: (seneca: any, cmdspec: any, entspec: any, spec: any, options: any) => {
+      seneca.message(makePattern(cmdspec, entspec, spec, options),
         makeAction(cmdspec, entspec, spec))
     },
   }
@@ -140,7 +149,7 @@ function provider(this: any, options: ProviderOptions) {
       for (let cmdname in entspec.cmd) {
         let cmdspec = entspec.cmd[cmdname]
         cmdspec.name = cmdname
-        cmdBuilder[cmdname](seneca, cmdspec, entspec, spec)
+        cmdBuilder[cmdname](seneca, cmdspec, entspec, spec, options)
       }
     }
   }
@@ -152,11 +161,21 @@ function provider(this: any, options: ProviderOptions) {
 
     utilopts.name = utilopts.name || ''
 
-    const fetcher: any =
+    let fetcher: any =
       ('undefined' === typeof globalThis.fetch) ?
         (utilopts.fetch || require('node-fetch')) :
         globalThis.fetch
 
+
+    let retry = utilopts.retry
+    if (true === retry) {
+      fetcher = FetchRetry(fetcher)
+    }
+    else if (null != retry && 'object' === typeof retry) {
+      if (null == retry.modes || retry.modes.includes('standard')) {
+        fetcher = FetchRetry(fetcher, retry.config)
+      }
+    }
 
     function makeUrl(suffix: string, q: any) {
       let url = utilopts.url + suffix
@@ -287,14 +306,16 @@ provider.intern = {
 }
 
 
-function makePattern(cmdspec: any, entspec: any, spec: any) {
-  return {
-    role: 'entity',
+function makePattern(cmdspec: any, entspec: any, spec: any, options: any) {
+  let pat: any = {
     cmd: cmdspec.name,
     zone: 'provider',
     base: spec.provider.name,
-    name: entspec.name
+    name: entspec.name,
+    ...(options?.entity?.pin || {})
   }
+
+  return pat
 }
 
 
@@ -360,7 +381,10 @@ function applyModifySpec(data: any, spec?: ModifySpec) {
 
 // Default options.
 const defaults: ProviderOptions = {
-  provider: {}
+  provider: {},
+  entity: {
+    pin: { sys: 'entity' }
+  }
 }
 
 Object.assign(provider, { defaults })

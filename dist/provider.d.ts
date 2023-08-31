@@ -12,12 +12,19 @@ type ModifySpec = {
 };
 type ProviderOptions = {
     provider: Record<string, Provider>;
+    entity: {
+        pin: Record<string, string | number | boolean | null>;
+    };
 };
 type ProviderUtilityOptions = {
     name: string;
     url: string;
     fetch?: any;
     debug: boolean;
+    retry: boolean | {
+        modes?: string[];
+        config: any;
+    };
 };
 declare function provider(this: any, options: ProviderOptions): {
     exports: {
@@ -39,13 +46,7 @@ declare namespace provider {
         applyModifySpec: typeof applyModifySpec;
     };
 }
-declare function makePattern(cmdspec: any, entspec: any, spec: any): {
-    role: string;
-    cmd: any;
-    zone: string;
-    base: any;
-    name: any;
-};
+declare function makePattern(cmdspec: any, entspec: any, spec: any, options: any): any;
 declare function makeAction(cmdspec: any, entspec: any, spec: any): (this: any, msg: any, meta: any) => Promise<any>;
 declare function makeEntize(seneca: any, canon: any): (data: any, spec?: ModifySpec) => any;
 declare function applyModifySpec(data: any, spec?: ModifySpec): any;

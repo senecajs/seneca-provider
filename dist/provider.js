@@ -1,6 +1,12 @@
 "use strict";
-/* Copyright © 2022 Richard Rodger, MIT License. */
+/* Copyright © 2022-2023 Richard Rodger, MIT License. */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+// TODO: field manip utils:
+// pick subsets, renames, ignore undefs, etc - see trello-provider for use case
+const fetch_retry_1 = __importDefault(require("fetch-retry"));
 function provider(options) {
     const seneca = this;
     const injectVars = seneca.export('env/injectVars');
@@ -46,17 +52,17 @@ function provider(options) {
         };
     }
     const cmdBuilder = {
-        list: (seneca, cmdspec, entspec, spec) => {
-            seneca.message(makePattern(cmdspec, entspec, spec), makeAction(cmdspec, entspec, spec));
+        list: (seneca, cmdspec, entspec, spec, options) => {
+            seneca.message(makePattern(cmdspec, entspec, spec, options), makeAction(cmdspec, entspec, spec));
         },
-        load: (seneca, cmdspec, entspec, spec) => {
-            seneca.message(makePattern(cmdspec, entspec, spec), makeAction(cmdspec, entspec, spec));
+        load: (seneca, cmdspec, entspec, spec, options) => {
+            seneca.message(makePattern(cmdspec, entspec, spec, options), makeAction(cmdspec, entspec, spec));
         },
-        save: (seneca, cmdspec, entspec, spec) => {
-            seneca.message(makePattern(cmdspec, entspec, spec), makeAction(cmdspec, entspec, spec));
+        save: (seneca, cmdspec, entspec, spec, options) => {
+            seneca.message(makePattern(cmdspec, entspec, spec, options), makeAction(cmdspec, entspec, spec));
         },
-        remove: (seneca, cmdspec, entspec, spec) => {
-            seneca.message(makePattern(cmdspec, entspec, spec), makeAction(cmdspec, entspec, spec));
+        remove: (seneca, cmdspec, entspec, spec, options) => {
+            seneca.message(makePattern(cmdspec, entspec, spec, options), makeAction(cmdspec, entspec, spec));
         },
     };
     const { Value } = seneca.valid;
@@ -78,16 +84,25 @@ function provider(options) {
             for (let cmdname in entspec.cmd) {
                 let cmdspec = entspec.cmd[cmdname];
                 cmdspec.name = cmdname;
-                cmdBuilder[cmdname](seneca, cmdspec, entspec, spec);
+                cmdBuilder[cmdname](seneca, cmdspec, entspec, spec, options);
             }
         }
     }
     function makeUtils(utilopts) {
         // TODO: provider name for better errors
         utilopts.name = utilopts.name || '';
-        const fetcher = ('undefined' === typeof globalThis.fetch) ?
+        let fetcher = ('undefined' === typeof globalThis.fetch) ?
             (utilopts.fetch || require('node-fetch')) :
             globalThis.fetch;
+        let retry = utilopts.retry;
+        if (true === retry) {
+            fetcher = (0, fetch_retry_1.default)(fetcher);
+        }
+        else if (null != retry && 'object' === typeof retry) {
+            if (null == retry.modes || retry.modes.includes('standard')) {
+                fetcher = (0, fetch_retry_1.default)(fetcher, retry.config);
+            }
+        }
         function makeUrl(suffix, q) {
             let url = utilopts.url + suffix;
             if (q) {
@@ -201,14 +216,16 @@ provider.intern = {
     makeEntize,
     applyModifySpec,
 };
-function makePattern(cmdspec, entspec, spec) {
-    return {
-        role: 'entity',
+function makePattern(cmdspec, entspec, spec, options) {
+    var _a;
+    let pat = {
         cmd: cmdspec.name,
         zone: 'provider',
         base: spec.provider.name,
-        name: entspec.name
+        name: entspec.name,
+        ...(((_a = options === null || options === void 0 ? void 0 : options.entity) === null || _a === void 0 ? void 0 : _a.pin) || {})
     };
+    return pat;
 }
 function makeAction(cmdspec, entspec, spec) {
     let canon = 'provider/' + spec.provider.name + '/' + entspec.name;
@@ -257,7 +274,10 @@ function applyModifySpec(data, spec) {
 }
 // Default options.
 const defaults = {
-    provider: {}
+    provider: {},
+    entity: {
+        pin: { sys: 'entity' }
+    }
 };
 Object.assign(provider, { defaults });
 exports.default = provider;
