@@ -1,3 +1,5 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
+import FetchRetry from 'fetch-retry';
 type Provider = {
     name: string;
     keys: Record<string, KeyDesc>;
@@ -22,9 +24,9 @@ type ProviderUtilityOptions = {
     fetch?: any;
     debug: boolean;
     retry: boolean | {
-        modes?: string[];
         config: any;
     };
+    config?: Record<string, any>;
 };
 declare function provider(this: any, options: ProviderOptions): {
     exports: {
@@ -35,6 +37,10 @@ declare function provider(this: any, options: ProviderOptions): {
             getJSON: (url: string, config?: any) => Promise<any>;
             postJSON: (url: string, config?: any) => Promise<any>;
             deleteJSON: (url: string, config?: any) => Promise<any>;
+            fetcher: any;
+            origFetcher: any;
+            fetchRetry: typeof FetchRetry;
+            asyncLocalStorage: AsyncLocalStorage<unknown>;
         };
     };
 };

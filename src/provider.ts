@@ -4,6 +4,7 @@
 // TODO: field manip utils:
 // pick subsets, renames, ignore undefs, etc - see trello-provider for use case
 
+import { AsyncLocalStorage } from 'node:async_hooks'
 
 import FetchRetry from 'fetch-retry'
 
@@ -36,14 +37,15 @@ type ProviderUtilityOptions = {
   fetch?: any
   debug: boolean
   retry: boolean | {
-    modes?: string[] // standard, token-refresh
     config: any
-  }
+  },
+  config?: Record<string, any>
 }
 
 
 function provider(this: any, options: ProviderOptions) {
   const seneca = this
+  const { deep } = seneca.util
 
   const injectVars = seneca.export('env/injectVars')
 
@@ -161,20 +163,22 @@ function provider(this: any, options: ProviderOptions) {
 
     utilopts.name = utilopts.name || ''
 
-    let fetcher: any =
+    const sharedConfig = utilopts.config || {}
+
+    const asyncLocalStorage = new AsyncLocalStorage()
+
+    let origFetcher: any =
       ('undefined' === typeof globalThis.fetch) ?
         (utilopts.fetch || require('node-fetch')) :
         globalThis.fetch
-
+    let fetcher = origFetcher
 
     let retry = utilopts.retry
     if (true === retry) {
       fetcher = FetchRetry(fetcher)
     }
     else if (null != retry && 'object' === typeof retry) {
-      if (null == retry.modes || retry.modes.includes('standard')) {
-        fetcher = FetchRetry(fetcher, retry.config)
-      }
+      fetcher = FetchRetry(fetcher, retry.config || {})
     }
 
     function makeUrl(suffix: string, q: any) {
@@ -196,32 +200,58 @@ function provider(this: any, options: ProviderOptions) {
 
 
     async function getJSON(url: string, config?: any) {
-      const res = await fetcher(url, config)
+      const getConfig = deep(sharedConfig, config)
 
-      if (200 == res.status) {
-        const json: any = await res.json()
-        return json
-      } else {
-        const err: any = new Error('Provider ' + utilopts.name + ' ' + res.status)
-        err.provider = {
-          response: res,
-          options,
-          config,
+      return asyncLocalStorage.run({ m: Math.random(), config: getConfig }, async () => {
+
+        // console.log('GETC', getConfig)
+
+        const res = await fetcher(url, getConfig)
+
+        // console.log('getJSON res', res.status)
+
+        if (200 == res.status) {
+          const json: any = await res.json()
+          return json
+        } else {
+          const err: any = new Error('Provider ' + utilopts.name + ' ' + res.status)
+          err.provider = {
+            response: res,
+            options,
+            config,
+          }
+          throw err
         }
-        throw err
-      }
+      })
     }
 
 
+    // NOTE: can also be used for PUT, set method:'PUT'
     async function postJSON(url: string, config?: any) {
-      const postConfig = {
-        method: config.method || "post",
-        body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
-        headers: {
-          "Content-Type": config.headers["Content-Type"] || "application/json",
-          ...config.headers,
+      const postConfig = deep(
+        {
+          method: 'post',
+          headers: {
+            'Content-Type': 'application/json',
+          }
         },
-      }
+        config || {},
+        sharedConfig
+      )
+
+      postConfig.body =
+        'string' === typeof config.body ? config.body :
+          JSON.stringify(config.body)
+
+      // const postConfig = {
+      //   ...(config || {}),
+      //   method: config.method || "post",
+      //   body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
+      //   headers: {
+      //     "Content-Type": config.headers["Content-Type"] || "application/json",
+      //     ...config.headers,
+      //   },
+      // }
 
       const res = await fetcher(url, postConfig)
 
@@ -246,14 +276,27 @@ function provider(this: any, options: ProviderOptions) {
       }
     }
 
+
     async function deleteJSON(url: string, config?: any) {
-      const deleteConfig = {
-        method: config.method || "delete",
-        headers: {
-          "Content-Type": config.headers["Content-Type"] || "application/json",
-          ...config.headers,
+      const deleteConfig = deep(
+        {
+          method: 'delete',
+          headers: {
+            'Content-Type': 'application/json',
+          }
         },
-      }
+        config,
+        sharedConfig
+      )
+
+      // const deleteConfig = {
+      //   ...(config || {}),
+      //   method: config.method || "delete",
+      //   headers: {
+      //     "Content-Type": config.headers["Content-Type"] || "application/json",
+      //     ...config.headers,
+      //   },
+      // }
 
       const res = await fetcher(url, deleteConfig)
 
@@ -284,6 +327,10 @@ function provider(this: any, options: ProviderOptions) {
       getJSON,
       postJSON,
       deleteJSON,
+      fetcher,
+      origFetcher,
+      fetchRetry: FetchRetry,
+      asyncLocalStorage,
     }
   }
 

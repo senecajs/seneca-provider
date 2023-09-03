@@ -12,11 +12,12 @@ function makeApiServer() {
   let state = {
     key: 'KEY',
     token: {
-      refresh: 0,
+      refresh: 1,
       access: 0,
     },
     entity: {
-      zed: 0
+      zed: 0,
+      foo: 0,
     }
   }
 
@@ -24,15 +25,16 @@ function makeApiServer() {
   s0
     .use(Express.json())
     .use((req,res)=>{
-      console.log('REQ', req.path, state)
+      // console.log('REQ', req.path, state)
       req.next()
     })
   
     .get('/token/refresh', (req, res) => {
-      console.log(req)
       let key = req.get('x-sp-key')
+      // console.log('GET /token/refresh', key)
+
       if(key === state.key) {
-        state.token.refresh++
+        state.token.access = 0+(Math.pow(10,state.token.refresh-1))
         res.send({refresh:'R'+state.token.refresh})
       }
       else {
@@ -41,22 +43,38 @@ function makeApiServer() {
     })
     .get('/token/access', (req, res) => {
       let refresh = req.get('x-sp-refresh')
+      // console.log('GET /token/access', refresh)
+      
+      
       if(refresh === 'R'+state.token.refresh) {
-        state.token.access++
         res.send({access:'A'+state.token.access})
       }
       else {
-        console.log('INVALID REFRESH', refresh)
+        // console.log('INVALID REFRESH', refresh)
         res.status(401).end()
       }
     })
     .get('/entity/foo/:id', (req, res) => {
       let access = req.get('x-sp-access')
+      // console.log('GET /entity/foo', access)
+      
+
       if(access === 'A'+state.token.access) {
+        state.entity.foo++
+
+        if(0 === (state.entity.foo % 3)) {
+          state.token.access++
+        }
+
+        if(0 === (state.entity.foo % 5)) {
+          state.token.access = 0
+          state.token.refresh++
+        }
+
         res.send({id:req.params.id,kind:'foo'})
       }
       else {
-        console.log('INVALID ACCESS', access)
+        // console.log('INVALID ACCESS', access)
         res.status(401).end()
       }
     })
@@ -69,7 +87,7 @@ function makeApiServer() {
         res.send({id:req.params.id,kind:'bar'})
       }
       else {
-        console.log('ZED 500')
+        // console.log('ZED 500')
         res.status(500).end()
       }
     })

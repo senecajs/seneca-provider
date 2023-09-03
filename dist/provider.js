@@ -6,9 +6,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 // TODO: field manip utils:
 // pick subsets, renames, ignore undefs, etc - see trello-provider for use case
+const node_async_hooks_1 = require("node:async_hooks");
 const fetch_retry_1 = __importDefault(require("fetch-retry"));
 function provider(options) {
     const seneca = this;
+    const { deep } = seneca.util;
     const injectVars = seneca.export('env/injectVars');
     const providerMap = {};
     Object.entries(options.provider).forEach(([name, p]) => {
@@ -91,17 +93,18 @@ function provider(options) {
     function makeUtils(utilopts) {
         // TODO: provider name for better errors
         utilopts.name = utilopts.name || '';
-        let fetcher = ('undefined' === typeof globalThis.fetch) ?
+        const sharedConfig = utilopts.config || {};
+        const asyncLocalStorage = new node_async_hooks_1.AsyncLocalStorage();
+        let origFetcher = ('undefined' === typeof globalThis.fetch) ?
             (utilopts.fetch || require('node-fetch')) :
             globalThis.fetch;
+        let fetcher = origFetcher;
         let retry = utilopts.retry;
         if (true === retry) {
             fetcher = (0, fetch_retry_1.default)(fetcher);
         }
         else if (null != retry && 'object' === typeof retry) {
-            if (null == retry.modes || retry.modes.includes('standard')) {
-                fetcher = (0, fetch_retry_1.default)(fetcher, retry.config);
-            }
+            fetcher = (0, fetch_retry_1.default)(fetcher, retry.config || {});
         }
         function makeUrl(suffix, q) {
             let url = utilopts.url + suffix;
@@ -120,30 +123,46 @@ function provider(options) {
             return url;
         }
         async function getJSON(url, config) {
-            const res = await fetcher(url, config);
-            if (200 == res.status) {
-                const json = await res.json();
-                return json;
-            }
-            else {
-                const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
-                err.provider = {
-                    response: res,
-                    options,
-                    config,
-                };
-                throw err;
-            }
+            const getConfig = deep(sharedConfig, config);
+            return asyncLocalStorage.run({ m: Math.random(), config: getConfig }, async () => {
+                // console.log('GETC', getConfig)
+                const res = await fetcher(url, getConfig);
+                // console.log('getJSON res', res.status)
+                if (200 == res.status) {
+                    const json = await res.json();
+                    return json;
+                }
+                else {
+                    const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
+                    err.provider = {
+                        response: res,
+                        options,
+                        config,
+                    };
+                    throw err;
+                }
+            });
         }
+        // NOTE: can also be used for PUT, set method:'PUT'
         async function postJSON(url, config) {
-            const postConfig = {
-                method: config.method || "post",
-                body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
+            const postConfig = deep({
+                method: 'post',
                 headers: {
-                    "Content-Type": config.headers["Content-Type"] || "application/json",
-                    ...config.headers,
-                },
-            };
+                    'Content-Type': 'application/json',
+                }
+            }, config || {}, sharedConfig);
+            postConfig.body =
+                'string' === typeof config.body ? config.body :
+                    JSON.stringify(config.body);
+            // const postConfig = {
+            //   ...(config || {}),
+            //   method: config.method || "post",
+            //   body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
+            //   headers: {
+            //     "Content-Type": config.headers["Content-Type"] || "application/json",
+            //     ...config.headers,
+            //   },
+            // }
             const res = await fetcher(url, postConfig);
             if (200 <= res.status && res.status < 300) {
                 const json = await res.json();
@@ -166,13 +185,20 @@ function provider(options) {
             }
         }
         async function deleteJSON(url, config) {
-            const deleteConfig = {
-                method: config.method || "delete",
+            const deleteConfig = deep({
+                method: 'delete',
                 headers: {
-                    "Content-Type": config.headers["Content-Type"] || "application/json",
-                    ...config.headers,
-                },
-            };
+                    'Content-Type': 'application/json',
+                }
+            }, config, sharedConfig);
+            // const deleteConfig = {
+            //   ...(config || {}),
+            //   method: config.method || "delete",
+            //   headers: {
+            //     "Content-Type": config.headers["Content-Type"] || "application/json",
+            //     ...config.headers,
+            //   },
+            // }
             const res = await fetcher(url, deleteConfig);
             if (200 <= res.status && res.status < 300) {
                 const json = await res.json();
@@ -200,6 +226,10 @@ function provider(options) {
             getJSON,
             postJSON,
             deleteJSON,
+            fetcher,
+            origFetcher,
+            fetchRetry: fetch_retry_1.default,
+            asyncLocalStorage,
         };
     }
     return {
