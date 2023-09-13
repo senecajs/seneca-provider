@@ -122,10 +122,10 @@ function provider(options) {
             }
             return url;
         }
-        async function getJSON(url, config) {
+        async function get(url, config) {
             const getConfig = deep(sharedConfig, config);
-            return asyncLocalStorage.run({ m: Math.random(), config: getConfig }, async () => {
-                // console.log('GETC', getConfig)
+            const store = { config: getConfig };
+            return asyncLocalStorage.run(store, async () => {
                 const res = await fetcher(url, getConfig);
                 // console.log('getJSON res', res.status)
                 if (200 == res.status) {
@@ -144,7 +144,7 @@ function provider(options) {
             });
         }
         // NOTE: can also be used for PUT, set method:'PUT'
-        async function postJSON(url, config) {
+        async function post(url, config) {
             const postConfig = deep({
                 method: 'post',
                 headers: {
@@ -154,82 +154,74 @@ function provider(options) {
             postConfig.body =
                 'string' === typeof config.body ? config.body :
                     JSON.stringify(config.body);
-            // const postConfig = {
-            //   ...(config || {}),
-            //   method: config.method || "post",
-            //   body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
-            //   headers: {
-            //     "Content-Type": config.headers["Content-Type"] || "application/json",
-            //     ...config.headers,
-            //   },
-            // }
-            const res = await fetcher(url, postConfig);
-            if (200 <= res.status && res.status < 300) {
-                const json = await res.json();
-                return json;
-            }
-            else {
-                const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
-                err.provider = {
-                    response: res,
-                    options,
-                    config,
-                };
-                try {
-                    err.provider.body = await res.json();
+            const store = { config: postConfig };
+            return asyncLocalStorage.run(store, async () => {
+                const res = await fetcher(url, postConfig);
+                if (200 <= res.status && res.status < 300) {
+                    const json = await res.json();
+                    return json;
                 }
-                catch (e) {
-                    err.provider.body = await res.text();
+                else {
+                    const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
+                    err.provider = {
+                        response: res,
+                        options,
+                        config,
+                    };
+                    try {
+                        err.provider.body = await res.json();
+                    }
+                    catch (e) {
+                        err.provider.body = await res.text();
+                    }
+                    throw err;
                 }
-                throw err;
-            }
+            });
         }
-        async function deleteJSON(url, config) {
+        async function deleteImpl(url, config) {
             const deleteConfig = deep({
                 method: 'delete',
                 headers: {
                     'Content-Type': 'application/json',
                 }
             }, config, sharedConfig);
-            // const deleteConfig = {
-            //   ...(config || {}),
-            //   method: config.method || "delete",
-            //   headers: {
-            //     "Content-Type": config.headers["Content-Type"] || "application/json",
-            //     ...config.headers,
-            //   },
-            // }
-            const res = await fetcher(url, deleteConfig);
-            if (200 <= res.status && res.status < 300) {
-                const json = await res.json();
-                return json;
-            }
-            else {
-                const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
-                err.provider = {
-                    response: res,
-                    options,
-                    config,
-                };
-                try {
-                    err.provider.body = await res.json();
+            const store = { config: deleteConfig };
+            return asyncLocalStorage.run(store, async () => {
+                const res = await fetcher(url, deleteConfig);
+                if (200 <= res.status && res.status < 300) {
+                    const json = await res.json();
+                    return json;
                 }
-                catch (e) {
-                    err.provider.body = await res.text();
+                else {
+                    const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
+                    err.provider = {
+                        response: res,
+                        options,
+                        config,
+                    };
+                    try {
+                        err.provider.body = await res.json();
+                    }
+                    catch (e) {
+                        err.provider.body = await res.text();
+                    }
+                    throw err;
                 }
-                throw err;
-            }
+            });
         }
         return {
             entityBuilder,
             makeUrl,
-            getJSON,
-            postJSON,
-            deleteJSON,
             fetcher,
             origFetcher,
             fetchRetry: fetch_retry_1.default,
             asyncLocalStorage,
+            get,
+            post,
+            delete: deleteImpl,
+            getJSON: get,
+            postJSON: post,
+            deleteJSON: deleteImpl,
         };
     }
     return {

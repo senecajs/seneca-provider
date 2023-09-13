@@ -199,13 +199,11 @@ function provider(this: any, options: ProviderOptions) {
     }
 
 
-    async function getJSON(url: string, config?: any) {
+    async function get(url: string, config?: any) {
       const getConfig = deep(sharedConfig, config)
+      const store = { config: getConfig }
 
-      return asyncLocalStorage.run({ m: Math.random(), config: getConfig }, async () => {
-
-        // console.log('GETC', getConfig)
-
+      return asyncLocalStorage.run(store, async () => {
         const res = await fetcher(url, getConfig)
 
         // console.log('getJSON res', res.status)
@@ -227,7 +225,7 @@ function provider(this: any, options: ProviderOptions) {
 
 
     // NOTE: can also be used for PUT, set method:'PUT'
-    async function postJSON(url: string, config?: any) {
+    async function post(url: string, config?: any) {
       const postConfig = deep(
         {
           method: 'post',
@@ -243,41 +241,36 @@ function provider(this: any, options: ProviderOptions) {
         'string' === typeof config.body ? config.body :
           JSON.stringify(config.body)
 
-      // const postConfig = {
-      //   ...(config || {}),
-      //   method: config.method || "post",
-      //   body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
-      //   headers: {
-      //     "Content-Type": config.headers["Content-Type"] || "application/json",
-      //     ...config.headers,
-      //   },
-      // }
+      const store = { config: postConfig }
 
-      const res = await fetcher(url, postConfig)
+      return asyncLocalStorage.run(store, async () => {
+        const res = await fetcher(url, postConfig)
 
-      if (200 <= res.status && res.status < 300) {
-        const json: any = await res.json()
-        return json
-      } else {
-        const err: any = new Error('Provider ' + utilopts.name + ' ' + res.status)
-        err.provider = {
-          response: res,
-          options,
-          config,
+        if (200 <= res.status && res.status < 300) {
+          const json: any = await res.json()
+          return json
         }
+        else {
+          const err: any = new Error('Provider ' + utilopts.name + ' ' + res.status)
+          err.provider = {
+            response: res,
+            options,
+            config,
+          }
 
-        try {
-          err.provider.body = await res.json()
-        } catch (e: any) {
-          err.provider.body = await res.text()
+          try {
+            err.provider.body = await res.json()
+          } catch (e: any) {
+            err.provider.body = await res.text()
+          }
+
+          throw err
         }
-
-        throw err
-      }
+      })
     }
 
 
-    async function deleteJSON(url: string, config?: any) {
+    async function deleteImpl(url: string, config?: any) {
       const deleteConfig = deep(
         {
           method: 'delete',
@@ -289,48 +282,47 @@ function provider(this: any, options: ProviderOptions) {
         sharedConfig
       )
 
-      // const deleteConfig = {
-      //   ...(config || {}),
-      //   method: config.method || "delete",
-      //   headers: {
-      //     "Content-Type": config.headers["Content-Type"] || "application/json",
-      //     ...config.headers,
-      //   },
-      // }
+      const store = { config: deleteConfig }
 
-      const res = await fetcher(url, deleteConfig)
+      return asyncLocalStorage.run(store, async () => {
+        const res = await fetcher(url, deleteConfig)
 
-      if (200 <= res.status && res.status < 300) {
-        const json: any = await res.json()
-        return json
-      } else {
-        const err: any = new Error('Provider ' + utilopts.name + ' ' + res.status)
-        err.provider = {
-          response: res,
-          options,
-          config,
+        if (200 <= res.status && res.status < 300) {
+          const json: any = await res.json()
+          return json
+        } else {
+          const err: any = new Error('Provider ' + utilopts.name + ' ' + res.status)
+          err.provider = {
+            response: res,
+            options,
+            config,
+          }
+
+          try {
+            err.provider.body = await res.json()
+          } catch (e: any) {
+            err.provider.body = await res.text()
+          }
+
+          throw err
         }
-
-        try {
-          err.provider.body = await res.json()
-        } catch (e: any) {
-          err.provider.body = await res.text()
-        }
-
-        throw err
-      }
+      })
     }
+
 
     return {
       entityBuilder,
       makeUrl,
-      getJSON,
-      postJSON,
-      deleteJSON,
       fetcher,
       origFetcher,
       fetchRetry: FetchRetry,
       asyncLocalStorage,
+      get,
+      post,
+      delete: deleteImpl,
+      getJSON: get,
+      postJSON: post,
+      deleteJSON: deleteImpl,
     }
   }
 

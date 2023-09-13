@@ -84,6 +84,8 @@ describe('api', () => {
         const prefix = 'http://127.0.0.1:60101/'
         let refreshToken = null
 
+        const reqSeneca = seneca.root.delegate()
+
         const { makeUrl, getJSON, origFetcher, asyncLocalStorage } =
           seneca.export('provider/makeUtils')({
             name: 'api',
@@ -105,12 +107,19 @@ describe('api', () => {
                     try {
                       if (null == refreshToken) {
                         // console.log('GET REFRESH', config.headers)
-                        let refreshResult = await origFetcher(prefix + 'token/refresh', {
-                          headers: {
-                            // TODO: get from provider
-                            'x-sp-key': 'KEY'
-                          }
-                        })
+
+                        let keyspec =
+                          await reqSeneca.post(
+                            'sys:provider,get:key,provider:api,key:main')
+                        let keyval = keyspec.value
+
+                        let refreshResult =
+                          await origFetcher(prefix + 'token/refresh', {
+                            headers: {
+                              // 'x-sp-key': 'KEY'
+                              'x-sp-key': keyval
+                            }
+                          })
                         let refreshJSON = await refreshResult.json()
                         // console.log('refresh json', refreshJSON)
 
@@ -153,6 +162,7 @@ describe('api', () => {
                     }
                     catch (e) {
                       console.log('E401', e)
+                      throw e
                     }
                   }
                 }

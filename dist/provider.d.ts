@@ -34,13 +34,16 @@ declare function provider(this: any, options: ProviderOptions): {
         makeUtils: (utilopts: ProviderUtilityOptions) => {
             entityBuilder: (seneca: any, spec: any) => void;
             makeUrl: (suffix: string, q: any) => string;
-            getJSON: (url: string, config?: any) => Promise<any>;
-            postJSON: (url: string, config?: any) => Promise<any>;
-            deleteJSON: (url: string, config?: any) => Promise<any>;
             fetcher: any;
             origFetcher: any;
             fetchRetry: typeof FetchRetry;
             asyncLocalStorage: AsyncLocalStorage<unknown>;
+            get: (url: string, config?: any) => Promise<any>;
+            post: (url: string, config?: any) => Promise<any>;
+            delete: (url: string, config?: any) => Promise<any>;
+            getJSON: (url: string, config?: any) => Promise<any>;
+            postJSON: (url: string, config?: any) => Promise<any>;
+            deleteJSON: (url: string, config?: any) => Promise<any>;
         };
     };
 };
