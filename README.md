@@ -89,9 +89,9 @@ $ npm install @seneca/provider
 
 ## Action Patterns
 
-* ["sys":"provider","get":"key"](#-sysprovidergetkey-)
-* ["sys":"provider","get":"keymap"](#-sysprovidergetkeymap-)
-* ["sys":"provider","list":"provider"](#-sysproviderlistprovider-)
+* [get:key,sys:provider](#-getkeysysprovider-)
+* [get:keymap,sys:provider](#-getkeymapsysprovider-)
+* [list:provider,sys:provider](#-listprovidersysprovider-)
 
 
 <!--END:action-list-->
@@ -101,23 +101,23 @@ $ npm install @seneca/provider
 
 ## Action Descriptions
 
-### &laquo; `"sys":"provider","get":"key"` &raquo;
-
-Get the value for a specific provider and key name.
-
-
-
-----------
-### &laquo; `"sys":"provider","get":"keymap"` &raquo;
+### &laquo; `get:key,sys:provider` &raquo;
 
 No description provided.
 
 
 
 ----------
-### &laquo; `"sys":"provider","list":"provider"` &raquo;
+### &laquo; `get:keymap,sys:provider` &raquo;
 
-List all the providers and their key names.
+No description provided.
+
+
+
+----------
+### &laquo; `list:provider,sys:provider` &raquo;
+
+No description provided.
 
 
 

@@ -43,7 +43,6 @@ declare function provider(this: any, options: ProviderOptions): {
             delete: (url: string, config?: any) => Promise<any>;
             getJSON: (url: string, config?: any) => Promise<any>;
             postJSON: (url: string, config?: any) => Promise<any>;
-            patchJSON: (url: string, config?: any) => Promise<any>;
             deleteJSON: (url: string, config?: any) => Promise<any>;
         };
     };

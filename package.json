@@ -1,6 +1,6 @@
 {
   "name": "@seneca/provider",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "main": "dist/provider.js",
   "type": "commonjs",
   "types": "dist/provider.d.ts",
@@ -37,6 +37,7 @@
   ],
   "devDependencies": {
     "@seneca/env": ">=0.2",
+    "@seneca/maintain": "^0.1.0",
     "@types/jest": "^29.5.4",
     "es-jest": "^2.1.0",
     "esbuild": "^0.19.2",
