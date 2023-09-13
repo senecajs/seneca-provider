@@ -48,6 +48,11 @@ describe('provider', () => {
 
 
     expect(seneca.find_plugin('provider').options).toEqual({
+      entity: {
+        pin: {
+          sys: 'entity',
+        },
+      },
       provider: {
         zed: {
           keys: {
@@ -180,11 +185,11 @@ describe('provider', () => {
       }
     })
 
-    expect(seneca.list('role:entity')[0]).toEqual({
+    expect(seneca.list('sys:entity')[0]).toEqual({
       base: 'foo',
       cmd: 'list',
       name: 'bar',
-      role: 'entity',
+      sys: 'entity',
       zone: 'provider',
     })
 

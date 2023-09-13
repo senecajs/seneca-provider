@@ -1,8 +1,16 @@
 "use strict";
-/* Copyright © 2022 Richard Rodger, MIT License. */
+/* Copyright © 2022-2023 Richard Rodger, MIT License. */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+// TODO: field manip utils:
+// pick subsets, renames, ignore undefs, etc - see trello-provider for use case
+const node_async_hooks_1 = require("node:async_hooks");
+const fetch_retry_1 = __importDefault(require("fetch-retry"));
 function provider(options) {
     const seneca = this;
+    const { deep } = seneca.util;
     const injectVars = seneca.export('env/injectVars');
     const providerMap = {};
     Object.entries(options.provider).forEach(([name, p]) => {
@@ -46,17 +54,17 @@ function provider(options) {
         };
     }
     const cmdBuilder = {
-        list: (seneca, cmdspec, entspec, spec) => {
-            seneca.message(makePattern(cmdspec, entspec, spec), makeAction(cmdspec, entspec, spec));
+        list: (seneca, cmdspec, entspec, spec, options) => {
+            seneca.message(makePattern(cmdspec, entspec, spec, options), makeAction(cmdspec, entspec, spec));
         },
-        load: (seneca, cmdspec, entspec, spec) => {
-            seneca.message(makePattern(cmdspec, entspec, spec), makeAction(cmdspec, entspec, spec));
+        load: (seneca, cmdspec, entspec, spec, options) => {
+            seneca.message(makePattern(cmdspec, entspec, spec, options), makeAction(cmdspec, entspec, spec));
         },
-        save: (seneca, cmdspec, entspec, spec) => {
-            seneca.message(makePattern(cmdspec, entspec, spec), makeAction(cmdspec, entspec, spec));
+        save: (seneca, cmdspec, entspec, spec, options) => {
+            seneca.message(makePattern(cmdspec, entspec, spec, options), makeAction(cmdspec, entspec, spec));
         },
-        remove: (seneca, cmdspec, entspec, spec) => {
-            seneca.message(makePattern(cmdspec, entspec, spec), makeAction(cmdspec, entspec, spec));
+        remove: (seneca, cmdspec, entspec, spec, options) => {
+            seneca.message(makePattern(cmdspec, entspec, spec, options), makeAction(cmdspec, entspec, spec));
         },
     };
     const { Value } = seneca.valid;
@@ -78,16 +86,26 @@ function provider(options) {
             for (let cmdname in entspec.cmd) {
                 let cmdspec = entspec.cmd[cmdname];
                 cmdspec.name = cmdname;
-                cmdBuilder[cmdname](seneca, cmdspec, entspec, spec);
+                cmdBuilder[cmdname](seneca, cmdspec, entspec, spec, options);
             }
         }
     }
     function makeUtils(utilopts) {
         // TODO: provider name for better errors
         utilopts.name = utilopts.name || '';
-        const fetcher = ('undefined' === typeof globalThis.fetch) ?
+        const sharedConfig = utilopts.config || {};
+        const asyncLocalStorage = new node_async_hooks_1.AsyncLocalStorage();
+        let origFetcher = ('undefined' === typeof globalThis.fetch) ?
             (utilopts.fetch || require('node-fetch')) :
             globalThis.fetch;
+        let fetcher = origFetcher;
+        let retry = utilopts.retry;
+        if (true === retry) {
+            fetcher = (0, fetch_retry_1.default)(fetcher);
+        }
+        else if (null != retry && 'object' === typeof retry) {
+            fetcher = (0, fetch_retry_1.default)(fetcher, retry.config || {});
+        }
         function makeUrl(suffix, q) {
             let url = utilopts.url + suffix;
             if (q) {
@@ -104,109 +122,106 @@ function provider(options) {
             }
             return url;
         }
-        async function makeError(res, config) {
-            const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
-            // Format api error for Seneca log
-            err.message += ' message: ' + JSON.stringify(await res.json());
-            err.provider = {
-                response: res,
-                options,
-                config,
-            };
-            return err;
+        async function get(url, config) {
+            const getConfig = deep(sharedConfig, config);
+            const store = { config: getConfig };
+            return asyncLocalStorage.run(store, async () => {
+                const res = await fetcher(url, getConfig);
+                // console.log('getJSON res', res.status)
+                if (200 == res.status) {
+                    const json = await res.json();
+                    return json;
+                }
+                else {
+                    const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
+                    err.provider = {
+                        response: res,
+                        options,
+                        config,
+                    };
+                    throw err;
+                }
+            });
         }
-        async function getJSON(url, config) {
-            const res = await fetcher(url, config);
-            if (200 == res.status) {
-                const json = await res.json();
-                return json;
-            }
-            else {
-                const err = await makeError(res, config);
-                throw err;
-            }
-        }
-        async function postJSON(url, config) {
-            const postConfig = {
-                method: config.method || "post",
-                body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
+        // NOTE: can also be used for PUT, set method:'PUT'
+        async function post(url, config) {
+            const postConfig = deep({
+                method: 'post',
                 headers: {
-                    "Content-Type": config.headers["Content-Type"] || "application/json",
-                    ...config.headers,
-                },
-            };
-            const res = await fetcher(url, postConfig);
-            if (200 <= res.status && res.status < 300) {
-                const json = await res.json();
-                return json;
-            }
-            else {
-                const err = await makeError(res, config);
-                try {
-                    err.provider.body = await res.json();
+                    'Content-Type': 'application/json',
                 }
-                catch (e) {
-                    err.provider.body = await res.text();
+            }, config || {}, sharedConfig);
+            postConfig.body =
+                'string' === typeof config.body ? config.body :
+                    JSON.stringify(config.body);
+            const store = { config: postConfig };
+            return asyncLocalStorage.run(store, async () => {
+                const res = await fetcher(url, postConfig);
+                if (200 <= res.status && res.status < 300) {
+                    const json = await res.json();
+                    return json;
                 }
-                throw err;
-            }
+                else {
+                    const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
+                    err.provider = {
+                        response: res,
+                        options,
+                        config,
+                    };
+                    try {
+                        err.provider.body = await res.json();
+                    }
+                    catch (e) {
+                        err.provider.body = await res.text();
+                    }
+                    throw err;
+                }
+            });
         }
-        async function patchJSON(url, config) {
-            const patchConfig = {
-                method: config.method || "patch",
-                body: "string" === typeof config.body ? config.body : JSON.stringify(config.body),
+        async function deleteImpl(url, config) {
+            const deleteConfig = deep({
+                method: 'delete',
                 headers: {
-                    "Content-Type": config.headers["Content-Type"] || "application/json",
-                    ...config.headers,
-                },
-            };
-            const res = await fetcher(url, patchConfig);
-            if (200 <= res.status && res.status < 300) {
-                const json = await res.json();
-                return json;
-            }
-            else {
-                const err = await makeError(res, config);
-                try {
-                    err.provider.body = await res.json();
+                    'Content-Type': 'application/json',
                 }
-                catch (e) {
-                    err.provider.body = await res.text();
+            }, config, sharedConfig);
+            const store = { config: deleteConfig };
+            return asyncLocalStorage.run(store, async () => {
+                const res = await fetcher(url, deleteConfig);
+                if (200 <= res.status && res.status < 300) {
+                    const json = await res.json();
+                    return json;
                 }
-                throw err;
-            }
-        }
-        async function deleteJSON(url, config) {
-            const deleteConfig = {
-                method: config.method || "delete",
-                headers: {
-                    "Content-Type": config.headers["Content-Type"] || "application/json",
-                    ...config.headers,
-                },
-            };
-            const res = await fetcher(url, deleteConfig);
-            if (200 <= res.status && res.status < 300) {
-                const json = await res.json();
-                return json;
-            }
-            else {
-                const err = await makeError(res, config);
-                try {
-                    err.provider.body = await res.json();
+                else {
+                    const err = new Error('Provider ' + utilopts.name + ' ' + res.status);
+                    err.provider = {
+                        response: res,
+                        options,
+                        config,
+                    };
+                    try {
+                        err.provider.body = await res.json();
+                    }
+                    catch (e) {
+                        err.provider.body = await res.text();
+                    }
+                    throw err;
                 }
-                catch (e) {
-                    err.provider.body = await res.text();
-                }
-                throw err;
-            }
+            });
         }
         return {
             entityBuilder,
             makeUrl,
-            getJSON,
-            postJSON,
-            patchJSON,
-            deleteJSON,
+            fetcher,
+            origFetcher,
+            fetchRetry: fetch_retry_1.default,
+            asyncLocalStorage,
+            get,
+            post,
+            delete: deleteImpl,
+            getJSON: get,
+            postJSON: post,
+            deleteJSON: deleteImpl,
         };
     }
     return {
@@ -223,14 +238,16 @@ provider.intern = {
     makeEntize,
     applyModifySpec,
 };
-function makePattern(cmdspec, entspec, spec) {
-    return {
-        role: 'entity',
+function makePattern(cmdspec, entspec, spec, options) {
+    var _a;
+    let pat = {
         cmd: cmdspec.name,
         zone: 'provider',
         base: spec.provider.name,
-        name: entspec.name
+        name: entspec.name,
+        ...(((_a = options === null || options === void 0 ? void 0 : options.entity) === null || _a === void 0 ? void 0 : _a.pin) || {})
     };
+    return pat;
 }
 function makeAction(cmdspec, entspec, spec) {
     let canon = 'provider/' + spec.provider.name + '/' + entspec.name;
@@ -279,7 +296,10 @@ function applyModifySpec(data, spec) {
 }
 // Default options.
 const defaults = {
-    provider: {}
+    provider: {},
+    entity: {
+        pin: { sys: 'entity' }
+    }
 };
 Object.assign(provider, { defaults });
 exports.default = provider;
