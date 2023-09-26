@@ -43,29 +43,29 @@ $ npm install @seneca/provider
 
 ## Provider Plugins
 
-* [@seneca/hubspot-provider](https://github.com/senecajs/seneca-hubspot-provider) - Seneca plugin that provides access to the HubSpot API.
-* [@seneca/eventbrite-provider](https://github.com/senecajs/seneca-eventbrite-provider) - Seneca provider for the eventbrite.com API.
-* [@seneca/gcal-provider](https://github.com/senecajs/seneca-gcal-provider) - Seneca plugin that provides access to the Google Calendar API.
-* [@seneca/github-provider](https://github.com/senecajs/seneca-github-provider) - Seneca plugin that provides access to the GitHub API.
-* [@seneca/gitlab-provider](https://github.com/senecajs/seneca-gitlab-provider) - Seneca plugin that provides access to the GitLab API.
-* [@seneca/nordigen-provider](https://github.com/senecajs/seneca-nordigen-provider) - Seneca provider for the nordigen API
-* [@seneca/notion-provider](https://github.com/senecajs/seneca-notion-provider) - Seneca plugin that provides access to the Notion.so API.
-* [@seneca/salesforce-provider](https://github.com/senecajs/seneca-salesforce-provider) - Seneca plugin that provides access to the SalesForce API.
-* [@seneca/stytch-provider](https://github.com/senecajs/seneca-stytch-provider) - Seneca plugin that provides access to the Stytch API.
-* [@seneca/trello-provider](https://github.com/senecajs/seneca-trello-provider) - Seneca plugin that provides access to the Trello API.
-* [@seneca/typeform-provider](https://github.com/senecajs/seneca-typeform-provider) - Seneca plugin that provides access to the Typeform API.
-* [@seneca/webflow-provider](https://github.com/senecajs/seneca-webflow-provider) - Seneca plugin that provides access to the Webflow API.
-* [@seneca/checklyhq-provider](https://github.com/senecajs/seneca-checklyhq-provider) - Seneca plugin that provides access to the Checkly API.
-* [@seneca/evervault-provider](https://github.com/senecajs/seneca-evervault-provider) - Seneca plugin that provides access to the Evervault API.
-* [@seneca/customerio-provider](https://github.com/senecajs/seneca-customerio-provider) - Seneca plugin that provides access to the Customerio API.
-* [@seneca/apimatic-provider](https://github.com/senecajs/seneca-apimatic-provider) - Seneca plugin that provides access to the Apimatic API.
-* [@seneca/orbit-provider](https://github.com/senecajs/seneca-orbit-provider) - Seneca plugin that provides access to the Orbit API.
-* [@seneca/zoom-provider](https://github.com/senecajs/seneca-zoom-provider) - Seneca plugin that provides access to the Zoom API.
-* [@seneca/tangocard-provider](https://github.com/senecajs/seneca-tangocard-provider) - Seneca plugin that provides access to the Tangocard API.
-* [@seneca/mixpanel-provider](https://github.com/senecajs/seneca-mixpanel-provider) - Seneca plugin that provides access to the Mixpanel API.
-* [@seneca/branchio-provider](https://github.com/senecajs/seneca-branchio-provider) - Seneca plugin that provides access to the Branchio API.
-* [@seneca/meetup-provider](https://github.com/senecajs/seneca-meetup-provider) - Seneca plugin that provides access to the Meetup API.
-* [@seneca/vercel-provider](https://github.com/senecajs/seneca-vercel-provider) - Seneca plugin that provides access to the Vercel API.
+* [@seneca/apimatic-provider](https://github.com/senecajs/seneca-apimatic-provider) - Apimatic API.
+* [@seneca/branchio-provider](https://github.com/senecajs/seneca-branchio-provider) - Branchio API.
+* [@seneca/checklyhq-provider](https://github.com/senecajs/seneca-checklyhq-provider) - Checkly API.
+* [@seneca/customerio-provider](https://github.com/senecajs/seneca-customerio-provider) - Customerio API.
+* [@seneca/eventbrite-provider](https://github.com/senecajs/seneca-eventbrite-provider) - Eventbrite API.
+* [@seneca/evervault-provider](https://github.com/senecajs/seneca-evervault-provider) - Evervault API.
+* [@seneca/gcal-provider](https://github.com/senecajs/seneca-gcal-provider) - Google Calendar API.
+* [@seneca/github-provider](https://github.com/senecajs/seneca-github-provider) - GitHub API.
+* [@seneca/gitlab-provider](https://github.com/senecajs/seneca-gitlab-provider) - GitLab API.
+* [@seneca/hubspot-provider](https://github.com/senecajs/seneca-hubspot-provider) - HubSpot API.
+* [@seneca/meetup-provider](https://github.com/senecajs/seneca-meetup-provider) - Meetup API.
+* [@seneca/mixpanel-provider](https://github.com/senecajs/seneca-mixpanel-provider) - Mixpanel API.
+* [@seneca/nordigen-provider](https://github.com/senecajs/seneca-nordigen-provider) - Nordigen API.
+* [@seneca/notion-provider](https://github.com/senecajs/seneca-notion-provider) - Notion.so API.
+* [@seneca/orbit-provider](https://github.com/senecajs/seneca-orbit-provider) - Orbit API.
+* [@seneca/salesforce-provider](https://github.com/senecajs/seneca-salesforce-provider) - SalesForce API.
+* [@seneca/stytch-provider](https://github.com/senecajs/seneca-stytch-provider) - Stytch API.
+* [@seneca/tangocard-provider](https://github.com/senecajs/seneca-tangocard-provider) - Tangocard API.
+* [@seneca/trello-provider](https://github.com/senecajs/seneca-trello-provider) - Trello API.
+* [@seneca/typeform-provider](https://github.com/senecajs/seneca-typeform-provider) - Typeform API.
+* [@seneca/vercel-provider](https://github.com/senecajs/seneca-vercel-provider) - Vercel API.
+* [@seneca/webflow-provider](https://github.com/senecajs/seneca-webflow-provider) - Webflow API.
+* [@seneca/zoom-provider](https://github.com/senecajs/seneca-zoom-provider) - Zoom API.
 
 
 # Write Your Own Provider

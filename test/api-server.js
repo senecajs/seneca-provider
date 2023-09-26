@@ -6,6 +6,7 @@ if( module === require.main ) {
   makeApiServer()
 }
 
+
 function makeApiServer() {
 
   // State is deterministic
@@ -92,10 +93,10 @@ function makeApiServer() {
       }
     })
 
+
+  let server = s0.listen(60101)
   
-    .listen(60101)
-
-
+  return server
 }
 
 module.exports = {

@@ -10,11 +10,20 @@ import ProviderDoc from '../src/provider-doc'
 import { makeApiServer } from './api-server'
 
 
+let server = null
+
+
 describe('api', () => {
 
+
   beforeAll(async () => {
-    makeApiServer()
+    server = makeApiServer()
   })
+
+  afterAll(async () => {
+    server.close()
+  })
+
 
   test('retry-zed', async () => {
     const s0 = makeSeneca()
@@ -222,7 +231,6 @@ describe('api', () => {
 
     let f7 = await s0.entity('provider/api/foo').load$('7')
     expect(f7).toMatchObject({ id: '7', kind: 'foo', a: 'A11', r: 'R2' })
-
 
   })
 
