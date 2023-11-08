@@ -128,15 +128,15 @@ function provider(this: any, options: ProviderOptions) {
   }
 
 
-  const { Value } = seneca.valid
+  const { Child } = seneca.valid
 
   const validateSpec = seneca.valid({
     provider: {
       name: String
     },
 
-    entity: Value({
-      cmd: Value({
+    entity: Child({
+      cmd: Child({
         action: Function
       }, {})
     }, {})
