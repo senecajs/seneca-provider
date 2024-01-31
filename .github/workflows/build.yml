@@ -16,8 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [lts/*, 19.x, 18.x, 16.x, 14.x]
+        os: [ubuntu-latest, macos-latest]
+        node-version: [20.x, 18.x, 16.x, 14.x]
 
     runs-on: ${{ matrix.os }} 
         

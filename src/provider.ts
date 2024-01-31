@@ -204,6 +204,7 @@ function provider(this: any, options: ProviderOptions) {
       const store = { config: getConfig }
 
       return asyncLocalStorage.run(store, async () => {
+        // console.log('PROVIDER get', url, getConfig, sharedConfig, config)
         const res = await fetcher(url, getConfig)
 
         // console.log('getJSON res', res.status)

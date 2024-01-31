@@ -48,6 +48,7 @@ describe('provider', () => {
 
 
     expect(seneca.find_plugin('provider').options).toEqual({
+      init$: true,
       entity: {
         pin: {
           sys: 'entity',
