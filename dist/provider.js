@@ -1,13 +1,9 @@
 "use strict";
 /* Copyright © 2022-2023 Richard Rodger, MIT License. */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 // TODO: field manip utils:
 // pick subsets, renames, ignore undefs, etc - see trello-provider for use case
 const node_async_hooks_1 = require("node:async_hooks");
-const fetch_retry_1 = __importDefault(require("fetch-retry"));
 function provider(options) {
     const seneca = this;
     const { deep } = seneca.util;
@@ -101,10 +97,10 @@ function provider(options) {
         let fetcher = origFetcher;
         let retry = utilopts.retry;
         if (true === retry) {
-            fetcher = (0, fetch_retry_1.default)(fetcher);
+            fetcher = FetchRetry(fetcher);
         }
         else if (null != retry && 'object' === typeof retry) {
-            fetcher = (0, fetch_retry_1.default)(fetcher, retry.config || {});
+            fetcher = FetchRetry(fetcher, retry.config || {});
         }
         function makeUrl(suffix, q) {
             let url = utilopts.url + suffix;
@@ -215,7 +211,7 @@ function provider(options) {
             makeUrl,
             fetcher,
             origFetcher,
-            fetchRetry: fetch_retry_1.default,
+            fetchRetry: FetchRetry,
             asyncLocalStorage,
             get,
             post,
@@ -294,6 +290,164 @@ function applyModifySpec(data, spec) {
         }
     }
     return data;
+}
+/* FetchRetry
+The MIT License (MIT)
+
+Copyright (c) 2016 Jon K. Bernhardsen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+function FetchRetry(fetch, defaults) {
+    defaults = defaults || {};
+    if (typeof fetch !== 'function') {
+        throw new Error('fetch must be a function');
+    }
+    if (typeof defaults !== 'object') {
+        throw new Error('defaults must be an object');
+    }
+    if (defaults.retries !== undefined && !isPositiveInteger(defaults.retries)) {
+        throw new Error('retries must be a positive integer');
+    }
+    if (defaults.retryDelay !== undefined && !isPositiveInteger(defaults.retryDelay) && typeof defaults.retryDelay !== 'function') {
+        throw new Error('retryDelay must be a positive integer or a function returning a positive integer');
+    }
+    if (defaults.retryOn !== undefined && !Array.isArray(defaults.retryOn) && typeof defaults.retryOn !== 'function') {
+        throw new Error('retryOn property expects an array or function');
+    }
+    var baseDefaults = {
+        retries: 3,
+        retryDelay: 1000,
+        retryOn: [],
+    };
+    defaults = Object.assign(baseDefaults, defaults);
+    return function fetchRetry(input, init) {
+        var retries = defaults.retries;
+        var retryDelay = defaults.retryDelay;
+        var retryOn = defaults.retryOn;
+        if (init && init.retries !== undefined) {
+            if (isPositiveInteger(init.retries)) {
+                retries = init.retries;
+            }
+            else {
+                throw new Error('retries must be a positive integer');
+            }
+        }
+        if (init && init.retryDelay !== undefined) {
+            if (isPositiveInteger(init.retryDelay) || (typeof init.retryDelay === 'function')) {
+                retryDelay = init.retryDelay;
+            }
+            else {
+                throw new Error('retryDelay must be a positive integer or a function returning a positive integer');
+            }
+        }
+        if (init && init.retryOn) {
+            if (Array.isArray(init.retryOn) || (typeof init.retryOn === 'function')) {
+                retryOn = init.retryOn;
+            }
+            else {
+                throw new Error('retryOn property expects an array or function');
+            }
+        }
+        // eslint-disable-next-line no-undef
+        return new Promise(function (resolve, reject) {
+            var wrappedFetch = function (attempt) {
+                // As of node 18, this is no longer needed since node comes with native support for fetch:
+                /* istanbul ignore next */
+                var _input = typeof Request !== 'undefined' && input instanceof Request
+                    ? input.clone()
+                    : input;
+                // console.log('RETRYFETCH fetch', _input, init)
+                fetch(_input, init)
+                    .then(function (response) {
+                    if (Array.isArray(retryOn) && retryOn.indexOf(response.status) === -1) {
+                        resolve(response);
+                    }
+                    else if (typeof retryOn === 'function') {
+                        try {
+                            // eslint-disable-next-line no-undef
+                            return Promise.resolve(retryOn(attempt, null, response, { resource: _input, options: init }))
+                                .then(function (retryOnResponse) {
+                                if (retryOnResponse) {
+                                    retry(attempt, null, response);
+                                }
+                                else {
+                                    resolve(response);
+                                }
+                            }).catch(reject);
+                        }
+                        catch (error) {
+                            reject(error);
+                        }
+                    }
+                    else {
+                        if (attempt < retries) {
+                            retry(attempt, null, response);
+                        }
+                        else {
+                            resolve(response);
+                        }
+                    }
+                })
+                    .catch(function (error) {
+                    if (typeof retryOn === 'function') {
+                        try {
+                            // eslint-disable-next-line no-undef
+                            Promise.resolve(retryOn(attempt, error, null, { resource: _input, options: init }))
+                                .then(function (retryOnResponse) {
+                                if (retryOnResponse) {
+                                    retry(attempt, error, null);
+                                }
+                                else {
+                                    reject(error);
+                                }
+                            })
+                                .catch(function (error) {
+                                reject(error);
+                            });
+                        }
+                        catch (error) {
+                            reject(error);
+                        }
+                    }
+                    else if (attempt < retries) {
+                        retry(attempt, error, null);
+                    }
+                    else {
+                        reject(error);
+                    }
+                });
+            };
+            function retry(attempt, error, response) {
+                var delay = (typeof retryDelay === 'function') ?
+                    retryDelay(attempt, error, response) : retryDelay;
+                setTimeout(function () {
+                    wrappedFetch(++attempt);
+                }, delay);
+            }
+            wrappedFetch(0);
+        });
+    };
+}
+;
+function isPositiveInteger(value) {
+    return Number.isInteger(value) && value >= 0;
 }
 // Default options.
 const defaults = {

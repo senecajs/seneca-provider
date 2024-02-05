@@ -1,6 +1,5 @@
 /// <reference types="node" />
 import { AsyncLocalStorage } from 'node:async_hooks';
-import FetchRetry from 'fetch-retry';
 type Provider = {
     name: string;
     keys: Record<string, KeyDesc>;
@@ -60,4 +59,5 @@ declare function makePattern(cmdspec: any, entspec: any, spec: any, options: any
 declare function makeAction(cmdspec: any, entspec: any, spec: any): (this: any, msg: any, meta: any) => Promise<any>;
 declare function makeEntize(seneca: any, canon: any): (data: any, spec?: ModifySpec) => any;
 declare function applyModifySpec(data: any, spec?: ModifySpec): any;
+declare function FetchRetry(fetch: any, defaults?: any): (input: any, init: any) => Promise<unknown>;
 export default provider;
