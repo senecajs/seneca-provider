@@ -17,4 +17,8 @@ jobs:
           node-version: '24'
       - run: npm install
       - run: npm run build --if-present
+      # GITHUB_TOKEN lifts the GitHub API rate limit from 60/hour (shared
+      # across runner IPs) to 5000/hour, so the live-API test is not flaky.
       - run: npm test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

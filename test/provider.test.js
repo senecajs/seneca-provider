@@ -1,19 +1,25 @@
+/* Copyright © 2021-2026 Richard Rodger, MIT License. */
+'use strict'
 
-import Provider from '../src/provider'
-import ProviderDoc from '../src/provider-doc'
+const { describe, test } = require('node:test')
+const assert = require('node:assert')
+
+const Provider = require('../dist/provider')
+const ProviderDoc = require('../dist/provider-doc')
+
+const { ProviderMessages } = require('../dist-test/provider.messages')
 
 const Seneca = require('seneca')
 const { Maintain } = require('@seneca/maintain')
 const SenecaMsgTest = require('seneca-msg-test')
-const ProviderMessages = require('./provider.messages').default
 
 
 
 describe('provider', () => {
 
   test('happy', async () => {
-    expect(Provider).toBeDefined()
-    expect(ProviderDoc).toBeDefined()
+    assert.ok(Provider)
+    assert.ok(ProviderDoc)
 
     const seneca = Seneca({ legacy: false }).test().use('promisify').use(Provider)
     await seneca.ready()
@@ -47,7 +53,7 @@ describe('provider', () => {
     await seneca.ready()
 
 
-    expect(seneca.find_plugin('provider').options).toEqual({
+    assert.deepEqual(seneca.find_plugin('provider').options, {
       init$: true,
       entity: {
         pin: {
@@ -70,7 +76,10 @@ describe('provider', () => {
     })
   })
 
-  test('maintain', Maintain)
+
+  test('maintain', async () => {
+    await Maintain()
+  })
 
 
   test('messages', async () => {
@@ -112,10 +121,20 @@ describe('provider', () => {
       .use(function RepohomeProvider() {
         const seneca = this
         const entityBuilder = seneca.export('provider/entityBuilder')
+
+        // This test hits the live GitHub API. Unauthenticated requests are
+        // capped at 60/hour per IP, which CI runners share - authenticate
+        // when a token is available to lift the cap to 5000/hour.
+        const config = { headers: {} }
+        if (process.env.GITHUB_TOKEN) {
+          config.headers.Authorization = 'Bearer ' + process.env.GITHUB_TOKEN
+        }
+
         const { makeUrl, getJSON } =
           seneca.export('provider/makeUtils')({
             name: 'repohome',
-            url: 'https://api.github.com/repos/senecajs/'
+            url: 'https://api.github.com/repos/senecajs/',
+            config,
           })
 
         entityBuilder(seneca, {
@@ -126,9 +145,8 @@ describe('provider', () => {
             readme: {
               cmd: {
                 load: {
-                  action: async function(this: any, entize: any, msg: any) {
-                    const res: any =
-                      await getJSON(makeUrl(msg.q.id))
+                  action: async function(entize, msg) {
+                    const res = await getJSON(makeUrl(msg.q.id))
 
                     let load = res ? entize(res) : null
 
@@ -144,16 +162,13 @@ describe('provider', () => {
       })
 
     let rm0 = await s0.entity('provider/repohome/readme').load$('seneca-provider')
-    expect(rm0.id).toEqual('seneca-provider')
-    expect(rm0.full_name).toEqual('senecajs/seneca-provider')
+    assert.equal(rm0.id, 'seneca-provider')
+    assert.equal(rm0.full_name, 'senecajs/seneca-provider')
 
-    try {
-      await s0.entity('provider/repohome/readme').load$('not-a-seneca-plugin')
-      fail()
-    }
-    catch (e) {
-      expect(e.message).toContain('Provider repohome')
-    }
+    await assert.rejects(
+      () => s0.entity('provider/repohome/readme').load$('not-a-seneca-plugin'),
+      (e) => e.message.includes('Provider repohome')
+    )
   })
 
 
@@ -175,9 +190,9 @@ describe('provider', () => {
         bar: {
           cmd: {
             list: {
-              action: async function(this: any, entize: any, msg: any) {
+              action: async function(entize, msg) {
                 let res = [{ x: 1 }, { x: 2 }]
-                let list = res.map((data: any) => entize(data))
+                let list = res.map((data) => entize(data))
                 return list
               }
             }
@@ -186,7 +201,7 @@ describe('provider', () => {
       }
     })
 
-    expect(seneca.list('sys:entity')[0]).toEqual({
+    assert.deepEqual(seneca.list('sys:entity')[0], {
       base: 'foo',
       cmd: 'list',
       name: 'bar',
@@ -194,23 +209,26 @@ describe('provider', () => {
       zone: 'provider',
     })
 
-    expect(await seneca.entity('provider/foo/bar').list$()).toMatchObject([
-      {
-        "entity$": "provider/foo/bar",
-        "x": 1,
-      },
-      {
-        "entity$": "provider/foo/bar",
-        "x": 2,
-      },
-    ])
+    assert.partialDeepStrictEqual(
+      await seneca.entity('provider/foo/bar').list$(),
+      [
+        {
+          "entity$": "provider/foo/bar",
+          "x": 1,
+        },
+        {
+          "entity$": "provider/foo/bar",
+          "x": 2,
+        },
+      ])
   })
 
 
   test('intern.applyModifySpec', async () => {
     const applyModifySpec = Provider.intern.applyModifySpec
-    expect(applyModifySpec({ x: 1 }, { field: { y: { src: 'x' } } }))
-      .toEqual({ x: 1, y: 1 })
+    assert.deepEqual(
+      applyModifySpec({ x: 1 }, { field: { y: { src: 'x' } } }),
+      { x: 1, y: 1 })
   })
 
 
@@ -226,7 +244,7 @@ describe('provider', () => {
     const entize = makeEntize(seneca, 'foo')
 
     let foo0 = entize({ x: 1 }, { field: { y: { src: 'x' } } })
-    expect(foo0.data$()).toEqual({
+    assert.deepEqual(foo0.data$(), {
       entity$: {
         base: undefined,
         name: 'foo',
@@ -236,8 +254,7 @@ describe('provider', () => {
 
     let foo1 = entize(seneca.entity('foo').make$({ x: 1 }),
       { field: { y: { src: 'x' } } })
-    expect(foo1).toEqual({ x: 1, y: 1 })
+    assert.deepEqual(foo1, { x: 1, y: 1 })
   })
 
 })
-

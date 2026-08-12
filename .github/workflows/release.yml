@@ -1,0 +1,38 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # required: lets npm trusted publishing mint the OIDC token
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing needs npm >= 11.5.1.
+      - run: npm install -g npm@latest
+
+      # package-lock.json is git-ignored in this repo, so `npm ci` is not usable.
+      - run: npm install
+
+      - run: npm run build
+
+      # GITHUB_TOKEN lifts the GitHub API rate limit from 60/hour (shared
+      # across runner IPs) to 5000/hour, so the live-API test is not flaky.
+      - run: npm test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # No NODE_AUTH_TOKEN. Auth is the OIDC token; provenance is automatic.
+      - run: npm publish --access public

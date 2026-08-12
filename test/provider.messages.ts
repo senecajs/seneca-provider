@@ -1,8 +1,8 @@
+/* Message spec fixture for seneca-msg-test.
+ * Compiled to dist-test/provider.messages.js via test/tsconfig.json.
+ */
 
-
-
-
-export default {
+export const ProviderMessages = {
   print: false,
   pattern: 'sys:provider',
   allow: { missing: true },

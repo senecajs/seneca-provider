@@ -236,13 +236,12 @@ provider.intern = {
     applyModifySpec,
 };
 function makePattern(cmdspec, entspec, spec, options) {
-    var _a;
     let pat = {
         cmd: cmdspec.name,
         zone: 'provider',
         base: spec.provider.name,
         name: entspec.name,
-        ...(((_a = options === null || options === void 0 ? void 0 : options.entity) === null || _a === void 0 ? void 0 : _a.pin) || {})
+        ...(options?.entity?.pin || {})
     };
     return pat;
 }

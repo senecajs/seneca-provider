@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { AsyncLocalStorage } from 'node:async_hooks';
 type Provider = {
     name: string;

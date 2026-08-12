@@ -5,16 +5,15 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "noEmitOnError": true,
-    "outDir":"dist",
+    "outDir": "../dist",
+    "rootDir": ".",
+    "tsBuildInfoFile": "../.tsbuildinfo/src.tsbuildinfo",
     "resolveJsonModule": true,
-    "rootDir":"src",
     "sourceMap": true,
     "strict": true,
-    "target": "ES2019"
-  },
-  "exclude": [
-    "test",
-    "dist",
-    "node_modules"
-  ]
+    "target": "ES2024",
+    "declaration": true,
+    "declarationDir": "../dist",
+    "types": ["node"]
+  }
 }

@@ -1,13 +1,14 @@
+/* Copyright © 2023-2026 Richard Rodger, MIT License. */
+'use strict'
 
+const { describe, test, before, after } = require('node:test')
+const assert = require('node:assert')
+
+const Provider = require('../dist/provider')
+
+const { makeApiServer } = require('./api-server')
 
 const Seneca = require('seneca')
-const SenecaMsgTest = require('seneca-msg-test')
-const ProviderMessages = require('./provider.messages').default
-
-import Provider from '../src/provider'
-import ProviderDoc from '../src/provider-doc'
-
-import { makeApiServer } from './api-server'
 
 
 let server = null
@@ -16,11 +17,11 @@ let server = null
 describe('api', () => {
 
 
-  beforeAll(async () => {
+  before(async () => {
     server = makeApiServer()
   })
 
-  afterAll(async () => {
+  after(async () => {
     server.close()
   })
 
@@ -50,9 +51,8 @@ describe('api', () => {
             zed: {
               cmd: {
                 load: {
-                  action: async function(this: any, entize: any, msg: any) {
-                    const res: any =
-                      await getJSON(makeUrl(msg.q.id))
+                  action: async function(entize, msg) {
+                    const res = await getJSON(makeUrl(msg.q.id))
 
                     let load = res ? entize(res) : null
 
@@ -68,7 +68,7 @@ describe('api', () => {
       })
 
     let z0 = await s0.entity('provider/api/zed').load$('0')
-    expect(z0).toMatchObject({ id: '0', kind: 'bar' })
+    assert.partialDeepStrictEqual(z0, { id: '0', kind: 'bar' })
   })
 
 
@@ -103,7 +103,7 @@ describe('api', () => {
             retry: {
               config: {
                 retryDelay: 100,
-                retryOn: async function(attempt: number, _error: any, response: any) {
+                retryOn: async function(attempt, _error, response) {
                   if (4 <= attempt) {
                     return false
                   }
@@ -187,10 +187,9 @@ describe('api', () => {
             foo: {
               cmd: {
                 load: {
-                  action: async function(this: any, entize: any, msg: any) {
+                  action: async function(entize, msg) {
                     // console.log('LOAD foo', config)
-                    const res: any =
-                      await getJSON(makeUrl(msg.q.id), config)
+                    const res = await getJSON(makeUrl(msg.q.id), config)
                     // console.log('LOAD res', res)
 
                     let load = res ? entize(res) : null
@@ -209,35 +208,35 @@ describe('api', () => {
       })
 
     let f0 = await s0.entity('provider/api/foo').load$('0')
-    expect(f0).toMatchObject({ id: '0', kind: 'foo', a: 'A1', r: 'R1' })
+    assert.partialDeepStrictEqual(f0, { id: '0', kind: 'foo', a: 'A1', r: 'R1' })
 
     let f1 = await s0.entity('provider/api/foo').load$('1')
-    expect(f1).toMatchObject({ id: '1', kind: 'foo', a: 'A1', r: 'R1' })
+    assert.partialDeepStrictEqual(f1, { id: '1', kind: 'foo', a: 'A1', r: 'R1' })
 
     let f2 = await s0.entity('provider/api/foo').load$('2')
-    expect(f2).toMatchObject({ id: '2', kind: 'foo', a: 'A1', r: 'R1' })
+    assert.partialDeepStrictEqual(f2, { id: '2', kind: 'foo', a: 'A1', r: 'R1' })
 
     let f3 = await s0.entity('provider/api/foo').load$('3')
-    expect(f3).toMatchObject({ id: '3', kind: 'foo', a: 'A2', r: 'R1' })
+    assert.partialDeepStrictEqual(f3, { id: '3', kind: 'foo', a: 'A2', r: 'R1' })
 
     let f4 = await s0.entity('provider/api/foo').load$('4')
-    expect(f4).toMatchObject({ id: '4', kind: 'foo', a: 'A2', r: 'R1' })
+    assert.partialDeepStrictEqual(f4, { id: '4', kind: 'foo', a: 'A2', r: 'R1' })
 
     let f5 = await s0.entity('provider/api/foo').load$('5')
-    expect(f5).toMatchObject({ id: '5', kind: 'foo', a: 'A10', r: 'R2' })
+    assert.partialDeepStrictEqual(f5, { id: '5', kind: 'foo', a: 'A10', r: 'R2' })
 
     let f6 = await s0.entity('provider/api/foo').load$('6')
-    expect(f6).toMatchObject({ id: '6', kind: 'foo', a: 'A11', r: 'R2' })
+    assert.partialDeepStrictEqual(f6, { id: '6', kind: 'foo', a: 'A11', r: 'R2' })
 
     let f7 = await s0.entity('provider/api/foo').load$('7')
-    expect(f7).toMatchObject({ id: '7', kind: 'foo', a: 'A11', r: 'R2' })
+    assert.partialDeepStrictEqual(f7, { id: '7', kind: 'foo', a: 'A11', r: 'R2' })
 
   })
 
 })
 
 
-function makeSeneca(providerOptions?: any) {
+function makeSeneca(providerOptions) {
   const s0 = Seneca({ legacy: false })
     .test()
     // .quiet()
@@ -246,4 +245,3 @@ function makeSeneca(providerOptions?: any) {
     .use(Provider, providerOptions || {})
   return s0
 }
-
