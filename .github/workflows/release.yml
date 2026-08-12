@@ -14,6 +14,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # A tag push checks out a detached HEAD, so .git/config has no
+      # [branch "main"] section and @seneca/maintain's check_default fails.
+      # Confirm the tag really is on main, then record it.
+      - name: Verify tag is on main
+        run: |
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor HEAD FETCH_HEAD
+          git config branch.main.remote origin
+          git config branch.main.merge refs/heads/main
 
       - uses: actions/setup-node@v4
         with:
