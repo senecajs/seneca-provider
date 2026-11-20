@@ -25,7 +25,8 @@ This module does two things:
   building, JSON handling, error wrapping, retry and token refresh
   provided for you.
 
-Requires Node.js 24 or later.
+Requires Seneca 4 and Node.js 24 or later. Seneca 3 users stay on
+`@seneca/provider@4`.
 
 ## Install
 
@@ -33,12 +34,11 @@ Requires Node.js 24 or later.
 $ npm install @seneca/provider
 ```
 
-`seneca`, `seneca-entity` and `seneca-promisify` are peer
-dependencies; `@seneca/env` is optional and enables environment
-variable references in key values.
+`seneca` and `@seneca/entity` are peer dependencies; `@seneca/env`
+is optional and enables environment variable references in key values.
 
 ```sh
-$ npm install seneca seneca-entity seneca-promisify
+$ npm install seneca@^4 @seneca/entity
 ```
 
 ## Quick Example
@@ -47,8 +47,7 @@ Register the plugin, declaring the keys your providers need:
 
 ```js
 Seneca({ legacy: false })
-  .use('promisify')
-  .use('entity')
+  .use('@seneca/entity')
   .use('provider', {
     provider: {
       github: {

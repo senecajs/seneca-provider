@@ -191,8 +191,9 @@ reference docs where they bite:
   `makeUtils` options — a naming collision that reads the wrong way.
 - The `debug` option is declared in `ProviderUtilityOptions` and never
   read.
-- The `fetch` option and the `node-fetch` peer dependency are dead
-  weight on Node 18+, where `globalThis.fetch` always exists.
+- The `fetch` option and the `node-fetch` fallback are dead weight on
+  Node 18+, where `globalThis.fetch` always exists. Since 5.0.0
+  `node-fetch` is no longer a peer dependency.
 - An unrecognised command name in an entity spec throws
   `TypeError: cmdBuilder[cmdname] is not a function` rather than a
   validation error.

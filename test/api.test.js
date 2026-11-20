@@ -240,8 +240,7 @@ function makeSeneca(providerOptions) {
   const s0 = Seneca({ legacy: false })
     .test()
     // .quiet()
-    .use('promisify')
-    .use('entity')
+    .use('@seneca/entity')
     .use(Provider, providerOptions || {})
   return s0
 }

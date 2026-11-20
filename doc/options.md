@@ -51,11 +51,14 @@ is registered — see [Environment injection](#environment-injection).
 
 Merged into every message pattern that `entityBuilder` generates. The
 default makes generated patterns entity messages, which is what routes
-`entity('provider/x/y').load$()` to your action.
+`entity('provider/x/y').load$()` to your action. The object is open:
+it accepts any extra pattern properties, such as
+`{ sys: 'entity', tier: 'external' }`.
 
-Overriding this is an advanced operation. Setting it to `{}` removes
-`sys:entity` and the generated messages will no longer be reachable
-through the entity API.
+Overriding this is an advanced operation. Setting it to `{}` does not
+remove `sys:entity`: the default property is filled in. Setting `sys`
+to another value makes the generated messages unreachable through the
+entity API.
 
 
 ## Environment injection
@@ -67,7 +70,7 @@ the value of the environment variable `NAME`.
 
 ```js
 Seneca()
-  .use('env', {
+  .use('@seneca/env', {
     var: {
       GITHUB_TOKEN: String,
     }
@@ -142,9 +145,9 @@ token-refresh recipe works.
 - **Default:** `globalThis.fetch`, else `require('node-fetch')`
 
 Only consulted when `globalThis.fetch` is undefined. On Node 24
-`globalThis.fetch` is always present, so this option and the
-`node-fetch` peer dependency are effectively dead on supported
-runtimes. Retained for older embedders.
+`globalThis.fetch` is always present, so this option is effectively
+dead on supported runtimes. Retained for older embedders, who must
+install `node-fetch` themselves: it is no longer a peer dependency.
 
 ### `debug`
 

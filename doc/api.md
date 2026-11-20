@@ -12,13 +12,13 @@ All signatures below are as implemented in `src/provider.ts`.
 
 ```js
 Seneca()
-  .use('promisify')
-  .use('entity')
+  .use('@seneca/entity')
   .use('provider', options)
 ```
 
-`seneca-entity` and `seneca-promisify` are peer dependencies and must
-be registered before any provider plugin that uses entities.
+`seneca` (4.x) and `@seneca/entity` are peer dependencies. Register
+`@seneca/entity` by its full name, before any provider plugin that uses
+entities.
 `@seneca/env` is optional; when present its `env/injectVars` export is
 used to resolve `$NAME` references in key values.
 

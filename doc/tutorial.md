@@ -5,8 +5,8 @@ Seneca plugin, end to end. By the end you will have a working
 `repohome` provider that loads GitHub repository data as a Seneca
 entity.
 
-You need Node.js 24 or later. Everything here runs against the live
-public GitHub API, so no credentials are required.
+You need Node.js 24 or later and Seneca 4. Everything here runs
+against the live public GitHub API, so no credentials are required.
 
 This is a learning path, not a reference — it shows one way through,
 not every option. When you want the full list of what each function
@@ -19,12 +19,12 @@ Create a folder and install the plugin along with the Seneca packages
 it works with:
 
 ```sh
-$ npm install seneca seneca-promisify seneca-entity @seneca/provider
+$ npm install seneca@^4 @seneca/entity @seneca/provider
 ```
 
-`seneca-entity` gives you the entity API that provider plugins expose
-their data through. `seneca-promisify` gives you `await`-able
-messages. Both are peer dependencies of `@seneca/provider`.
+`@seneca/entity` gives you the entity API that provider plugins expose
+their data through. It and `seneca` are peer dependencies of
+`@seneca/provider`. Seneca 4 has `await`-able messages built in.
 
 
 ## Step 2: start Seneca with the provider plugin
@@ -35,8 +35,7 @@ Create `repohome.js`:
 const Seneca = require('seneca')
 
 const seneca = Seneca({ legacy: false })
-  .use('promisify')
-  .use('entity')
+  .use('@seneca/entity')
   .use('provider')
 
 seneca.ready(() => {
@@ -138,8 +137,7 @@ Register the plugin:
 
 ```js
 const seneca = Seneca({ legacy: false })
-  .use('promisify')
-  .use('entity')
+  .use('@seneca/entity')
   .use('provider')
   .use(RepohomeProvider)
 ```
