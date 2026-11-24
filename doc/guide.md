@@ -12,9 +12,8 @@ with `$NAME`:
 
 ```js
 Seneca({ legacy: false })
-  .use('promisify')
-  .use('entity')
-  .use('env', {
+  .use('@seneca/entity')
+  .use('@seneca/env', {
     var: {
       GITHUB_TOKEN: String,
     }
@@ -39,7 +38,7 @@ stays a literal string.
 tests:
 
 ```js
-.use('env', {
+.use('@seneca/env', {
   file: __dirname + '/env.json',
   var: { FOO: String, BAR: String },
 })
@@ -329,7 +328,7 @@ describe('api', () => {
 
   test('load', async () => {
     const s0 = Seneca({ legacy: false }).test()
-      .use('promisify').use('entity').use(Provider).use(MyProvider)
+      .use('@seneca/entity').use(Provider).use(MyProvider)
 
     const out = await s0.entity('provider/api/foo').load$('0')
     assert.partialDeepStrictEqual(out, { id: '0', kind: 'foo' })

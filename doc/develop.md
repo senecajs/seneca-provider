@@ -105,15 +105,19 @@ instructions. `README.md` is an orientation hub — new detail belongs
 in one of the files above, not in the README.
 
 **seneca-doc fragments**, which are content injected into `README.md`
-by `npm run doc`:
+by the `seneca-doc` tool of `@seneca/doc`:
 
 - `doc/build.md` — how to author them.
 - `doc/intro.md`, `doc/support.md`, `doc/save_product.md` — fragment
   content, referenced from `src/provider-doc.ts`.
 
-`npm run doc` regenerates the regions of `README.md` between the
+`seneca-doc` regenerates the regions of `README.md` between the
 `<!--START:...-->` and `<!--END:...-->` markers from
-`src/provider-doc.ts`. Do not hand-edit inside those markers.
+`src/provider-doc.ts`. Do not hand-edit inside those markers. Since
+5.0.0 this repository has no `doc` script and no `@seneca/doc`
+development dependency, because the build and the tests do not use
+them; the generated regions are kept as they are. To regenerate them,
+install `@seneca/doc` and run `npx seneca-doc`.
 
 Two known gaps: `src/provider-doc.ts` has no description for
 `get:keymap`, and the descriptions it does carry have not been
@@ -124,7 +128,7 @@ provided."
 ## Releasing
 
 ```sh
-npm run repo-publish        # clean, install, build, test, doc, tag, publish
+npm run repo-publish        # clean, install, build, test, tag, publish
 npm run repo-publish-quick  # skip the clean reinstall
 ```
 

@@ -448,13 +448,15 @@ function FetchRetry(fetch, defaults) {
 function isPositiveInteger(value) {
     return Number.isInteger(value) && value >= 0;
 }
-// Default options.
-const defaults = {
+// Default options, built with the shape builders that Seneca passes in
+// `valid`. Seneca 4 closes plain-object defaults, so `entity.pin` is
+// open: it takes any extra pattern properties, as documented.
+const defaults = ({ valid }) => ({
     provider: {},
     entity: {
-        pin: { sys: 'entity' }
+        pin: valid.Open({ sys: 'entity' })
     }
-};
+});
 Object.assign(provider, { defaults });
 exports.default = provider;
 if ('undefined' !== typeof (module)) {

@@ -587,13 +587,15 @@ function isPositiveInteger(value: any) {
 
 
 
-// Default options.
-const defaults: ProviderOptions = {
+// Default options, built with the shape builders that Seneca passes in
+// `valid`. Seneca 4 closes plain-object defaults, so `entity.pin` is
+// open: it takes any extra pattern properties, as documented.
+const defaults = ({ valid }: { valid: any }) => ({
   provider: {},
   entity: {
-    pin: { sys: 'entity' }
+    pin: valid.Open({ sys: 'entity' })
   }
-}
+})
 
 Object.assign(provider, { defaults })
 

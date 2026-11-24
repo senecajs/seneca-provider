@@ -21,7 +21,7 @@ describe('provider', () => {
     assert.ok(Provider)
     assert.ok(ProviderDoc)
 
-    const seneca = Seneca({ legacy: false }).test().use('promisify').use(Provider)
+    const seneca = Seneca({ legacy: false }).test().use(Provider)
     await seneca.ready()
   })
 
@@ -31,8 +31,7 @@ describe('provider', () => {
     process.env.FOO = process.env.FOO || 'foo'
     const seneca = Seneca({ legacy: false })
       .test()
-      .use('promisify')
-      .use('env', {
+      .use('@seneca/env', {
         // debug: true,
         file: __dirname + '/env.json',
         var: {
@@ -53,8 +52,9 @@ describe('provider', () => {
     await seneca.ready()
 
 
+    // Seneca 4 adds no init$ directive to the resolved options; Seneca 3
+    // added init$: true to the defaults of every plugin.
     assert.deepEqual(seneca.find_plugin('provider').options, {
-      init$: true,
       entity: {
         pin: {
           sys: 'entity',
@@ -78,12 +78,75 @@ describe('provider', () => {
 
 
   test('maintain', async () => {
-    await Maintain()
+    const exclude = []
+
+    // check_default proves the default branch is main by looking for
+    // [branch "main"] in .git/config. Only a branch checkout records that
+    // section: a pull_request build checks out the merge ref, and the
+    // publish build checks out a tag as a detached HEAD. Neither says
+    // anything about what the default branch is, so skip rather than fail.
+    if ('pull_request' === process.env.GITHUB_EVENT_NAME ||
+        'tag' === process.env.GITHUB_REF_TYPE) {
+      exclude.push('check_default')
+    }
+
+    // url_pkgjson locates package.json by comparing process.cwd() + '/package.json'
+    // against a path found with Filehound. On Windows those are the same file
+    // spelt with different separators, so the url is never read.
+    if ('win32' === process.platform) {
+      exclude.push('url_pkgjson')
+    }
+
+    await Maintain({ exclude })
+  })
+
+
+  test('entity-pin-open', async () => {
+    // entity.pin is a pass-through bag of pattern properties: extra
+    // properties are accepted (Seneca 4 closes plain-object defaults).
+    const seneca = Seneca({ legacy: false })
+      .test()
+      .use('@seneca/entity')
+      .use(Provider, {
+        entity: {
+          pin: { sys: 'entity', tier: 'external' }
+        }
+      })
+    await seneca.ready()
+
+    assert.deepEqual(seneca.find_plugin('provider').options.entity, {
+      pin: { sys: 'entity', tier: 'external' }
+    })
+
+    const entityBuilder = seneca.export('provider/entityBuilder')
+    entityBuilder(seneca, {
+      provider: { name: 'foo' },
+      entity: {
+        bar: {
+          cmd: {
+            load: {
+              action: async function(entize, msg) {
+                return entize({ id: msg.q.id, x: 1 })
+              }
+            }
+          }
+        }
+      }
+    })
+
+    assert.deepEqual(seneca.list('sys:entity,tier:external'), [{
+      base: 'foo',
+      cmd: 'load',
+      name: 'bar',
+      sys: 'entity',
+      tier: 'external',
+      zone: 'provider',
+    }])
   })
 
 
   test('messages', async () => {
-    const seneca = Seneca({ legacy: false }).test().use('promisify').use(Provider, {
+    const seneca = Seneca({ legacy: false }).test().use(Provider, {
       provider: {
         foo: {
           keys: {
@@ -115,8 +178,7 @@ describe('provider', () => {
     const s0 = Seneca({ legacy: false })
       .test()
       .quiet()
-      .use('promisify')
-      .use('entity')
+      .use('@seneca/entity')
       .use(Provider, {})
       .use(function RepohomeProvider() {
         const seneca = this
@@ -175,8 +237,7 @@ describe('provider', () => {
 
   test('entityBuilder', async () => {
     const seneca = Seneca({ legacy: false }).test()
-      .use('promisify')
-      .use('entity')
+      .use('@seneca/entity')
       .use(Provider)
     await seneca.ready()
 
@@ -234,8 +295,7 @@ describe('provider', () => {
 
   test('intern.makeEntize', async () => {
     const seneca = Seneca({ legacy: false }).test()
-      .use('promisify')
-      .use('entity')
+      .use('@seneca/entity')
       .use(Provider)
     await seneca.ready()
 
